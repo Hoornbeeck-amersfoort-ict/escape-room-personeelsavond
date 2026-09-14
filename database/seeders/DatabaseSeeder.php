@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Beheerder',
             'email' => 'admin@example.com',
+            'password' => 'Tester1',
         ]);
 
         $game = Game::create([
@@ -57,7 +58,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $this->command?->info('Seeded 1 game, 15 teams (PIN '.self::DEV_TEAM_CODE.'), 17 rooms.');
+        $this->command?->info('Seeded 1 game, 15 teams (PIN ' . self::DEV_TEAM_CODE . '), 17 rooms.');
         $this->command?->info('Admin login: admin@example.com / password');
     }
 
