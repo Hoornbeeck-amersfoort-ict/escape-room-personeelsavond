@@ -9,6 +9,7 @@
             <thead class="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Naam</th>
+                    <th class="px-4 py-3">Code</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3">Sessies</th>
                     <th class="px-4 py-3"></th>
@@ -18,6 +19,7 @@
                 @forelse ($teams as $team)
                     <tr>
                         <td class="px-4 py-3 font-semibold text-slate-900">{{ $team->name }}</td>
+                        <td class="px-4 py-3 font-mono text-slate-700">{{ $team->code ?? '—' }}</td>
                         <td class="px-4 py-3">
                             <span class="{{ $team->active ? 'text-emerald-600' : 'text-red-600' }} font-semibold">
                                 {{ $team->active ? 'Actief' : 'Geblokkeerd' }}
@@ -48,7 +50,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-6 text-center text-slate-500">Nog geen teams.</td>
+                        <td colspan="5" class="px-4 py-6 text-center text-slate-500">Nog geen teams.</td>
                     </tr>
                 @endforelse
             </tbody>

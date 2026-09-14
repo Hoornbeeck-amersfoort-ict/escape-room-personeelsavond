@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Hash;
 
-#[Fillable(['game_id', 'name', 'code_hash', 'active'])]
+#[Fillable(['game_id', 'name', 'code_hash', 'code', 'active'])]
 #[Hidden(['code_hash'])]
 class Team extends Authenticatable
 {
@@ -57,6 +57,7 @@ class Team extends Authenticatable
 
     public function setCode(string $plainCode): void
     {
+        $this->code = $plainCode;
         $this->code_hash = Hash::make($plainCode);
     }
 
