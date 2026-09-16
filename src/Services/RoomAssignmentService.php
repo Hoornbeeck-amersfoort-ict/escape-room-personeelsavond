@@ -23,15 +23,10 @@ class RoomAssignmentService
     /** @return array{outcome: string, session?: array} */
     public function assignNextRoom(array $team, array $game): array
     {
-        $pdo = Database::connection();
-        $pdo->beginTransaction();
-
-        try {
+        return Database::transaction(function () use ($team, $game) {
             $existing = Team::currentRoomSession((int) $team['id']);
 
             if ($existing) {
-                $pdo->commit();
-
                 return ['outcome' => self::ASSIGNED, 'session' => $existing];
             }
 
@@ -41,16 +36,12 @@ class RoomAssignmentService
             $unplayedRooms = array_filter($allRooms, fn ($r) => ! in_array((int) $r['id'], $playedRoomIds, true));
 
             if ($unplayedRooms === []) {
-                $pdo->commit();
-
                 return ['outcome' => self::ALL_ROOMS_PLAYED];
             }
 
             $candidateRooms = array_values(array_filter($unplayedRooms, fn ($r) => (int) $r['active'] === 1));
 
             if ($candidateRooms === []) {
-                $pdo->commit();
-
                 return ['outcome' => self::WAITING];
             }
 
@@ -71,22 +62,14 @@ class RoomAssignmentService
                 'status' => 'assigned',
             ]);
 
-            $pdo->commit();
-
             return ['outcome' => self::ASSIGNED, 'session' => RoomSession::find($sessionId)];
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+        });
     }
 
     /** Admin override: assign a specific room regardless of the balancing algorithm. */
     public function assignSpecificRoom(array $team, array $room): array
     {
-        $pdo = Database::connection();
-        $pdo->beginTransaction();
-
-        try {
+        return Database::transaction(function () use ($team, $room) {
             $existing = Team::currentRoomSession((int) $team['id']);
             if ($existing) {
                 RoomSession::delete((int) $existing['id']);
@@ -99,12 +82,7 @@ class RoomAssignmentService
                 'status' => 'assigned',
             ]);
 
-            $pdo->commit();
-
             return RoomSession::find($sessionId);
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+        });
     }
 }

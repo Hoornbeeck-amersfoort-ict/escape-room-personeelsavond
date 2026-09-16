@@ -27,10 +27,6 @@ function fmtDuration(int $seconds): string
     return gmdate('H:i:s', $seconds);
 }
 ?>
-<script>
-    // The joke's on us: no wire:poll here, just the oldest trick in the book.
-    setTimeout(() => window.location.reload(), 5000);
-</script>
 
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
     <div>
@@ -38,7 +34,7 @@ function fmtDuration(int $seconds): string
         <p style="color:#64748b;">Status: <strong style="color:<?= $statusColor ?>;"><?= View::e(ucfirst($game['status'])) ?></strong></p>
     </div>
     <?php if ($game['status'] === 'running'): ?>
-        <div style="background:#0f172a;color:#fbbf24;padding:.5rem 1rem;border-radius:.75rem;font-family:monospace;font-size:1.1rem;">
+        <div id="event-timer" data-remaining="<?= $remainingEventSeconds ?>" style="background:#0f172a;color:#fbbf24;padding:.5rem 1rem;border-radius:.75rem;font-family:monospace;font-size:1.1rem;">
             Nog <?= fmtDuration($remainingEventSeconds) ?>
         </div>
     <?php endif; ?>
@@ -111,7 +107,8 @@ function fmtDuration(int $seconds): string
 <?php endif; ?>
 
 <?php if ($manualAssignTeamId): ?>
-    <div class="panel" style="margin-top:1.5rem;max-width:28rem;">
+    <div class="overlay">
+    <div class="panel" style="max-width:28rem;">
         <h2>Kies een kamer</h2>
         <?php foreach ($allRoomsForAssign as $room): ?>
             <form method="POST" action="/admin/games/<?= $gameId ?>/dashboard/assign-room" style="margin-bottom:.5rem;">
@@ -123,10 +120,12 @@ function fmtDuration(int $seconds): string
         <?php endforeach; ?>
         <a href="?tab=<?= $tab ?>" class="btn secondary w-full" style="display:block;margin-top:.5rem;">Annuleren</a>
     </div>
+    </div>
 <?php endif; ?>
 
 <?php if ($resettingSessionId): ?>
-    <div class="panel" style="margin-top:1.5rem;max-width:28rem;text-align:center;">
+    <div class="overlay">
+    <div class="panel" style="max-width:28rem;text-align:center;">
         <p><strong>Weet je zeker dat je deze sessie wilt resetten?</strong></p>
         <p style="font-size:.85rem;color:#64748b;">De sessie wordt verwijderd en het team krijgt automatisch een nieuwe kamer.</p>
         <div style="display:flex;gap:.5rem;margin-top:1rem;">
@@ -138,10 +137,12 @@ function fmtDuration(int $seconds): string
             <a href="?tab=<?= $tab ?>" class="btn secondary" style="flex:1;">Annuleren</a>
         </div>
     </div>
+    </div>
 <?php endif; ?>
 
 <?php if ($adjustingScoreSessionId && $adjustingSession): ?>
-    <div class="panel" style="margin-top:1.5rem;max-width:28rem;">
+    <div class="overlay">
+    <div class="panel" style="max-width:28rem;">
         <h2>Score aanpassen</h2>
         <form method="POST" action="/admin/games/<?= $gameId ?>/dashboard/adjust-score">
             <?= Csrf::field() ?>
@@ -153,4 +154,20 @@ function fmtDuration(int $seconds): string
             </div>
         </form>
     </div>
+    </div>
 <?php endif; ?>
+
+<script>
+    // Cosmetisch doortikken; de server blijft de enige bron van waarheid.
+    const eventTimer = document.getElementById('event-timer');
+    if (eventTimer) {
+        let remaining = parseInt(eventTimer.dataset.remaining, 10);
+        setInterval(() => {
+            if (remaining > 0) remaining--;
+            const h = String(Math.floor(remaining / 3600)).padStart(2, '0');
+            const m = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
+            const s = String(remaining % 60).padStart(2, '0');
+            eventTimer.textContent = `Nog ${h}:${m}:${s}`;
+        }, 1000);
+    }
+</script>

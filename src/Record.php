@@ -116,9 +116,4 @@ abstract class Record
 
         return [' WHERE '.implode(' AND ', $clauses), $params];
     }
-
-    /** Row locking is a no-op here: SQLite serializes writers anyway, and
-     * this app runs single-process via PHP's built-in server. A real
-     * multi-worker deployment would need SELECT ... FOR UPDATE (Postgres/MySQL). */
-    public static function lockForUpdateNotice(): void {}
 }

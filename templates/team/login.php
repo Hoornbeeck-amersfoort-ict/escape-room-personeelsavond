@@ -12,7 +12,7 @@ $flash = View::pullFlash();
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Escape Room - Inloggen</title>
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="<?= asset('/style.css') ?>">
 </head>
 <body>
 <div class="center-screen">

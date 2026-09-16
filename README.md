@@ -22,8 +22,8 @@ teams: PIN `1234`).
 ## What's different from the Laravel version
 
 - **No image uploads** for rooms (text-only trivia).
-- **Polling** is `setTimeout(() => location.reload(), 5000)` instead of Livewire —
-  same 5-second cadence, dramatically dumber implementation.
+- **Geen polling.** Schermen verversen niet vanzelf; de wachtschermen hebben een
+  knop "Vernieuwen". De klokken tikken client-side door, de server blijft leidend.
 - **No row locking.** SQLite plus PHP's built-in single-threaded dev server
   means this is fine for a live event but would need real transactions/locks
   on a concurrent multi-worker deployment.

@@ -14,7 +14,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= View::e($title) ?> — Escape Room Admin</title>
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="<?= asset('/style.css') ?>">
 </head>
 <body>
 <div class="admin-shell">

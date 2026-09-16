@@ -58,10 +58,9 @@ class GameController
         $game = Game::find((int) $gameId);
 
         $name = trim((string) ($_POST['name'] ?? ''));
-        $startTime = $this->parseDatetimeLocal($_POST['start_time'] ?? null);
-        $endTime = $this->parseDatetimeLocal($_POST['end_time'] ?? null);
+        $endTime = $this->parseDutchDatetime($_POST['end_time'] ?? null);
 
-        Game::update((int) $gameId, ['name' => $name !== '' ? $name : $game['name'], 'start_time' => $startTime, 'end_time' => $endTime]);
+        Game::update((int) $gameId, ['name' => $name !== '' ? $name : $game['name'], 'end_time' => $endTime]);
 
         $game = Game::find((int) $gameId);
         (new GameService)->finalizeIfEnded($game);
@@ -82,13 +81,6 @@ class GameController
     {
         $this->guardPost();
         $game = Game::find((int) $gameId);
-
-        if ($game['end_time'] === null) {
-            View::flash('Stel eerst een eindtijd in voordat je het spel start.');
-            header("Location: /admin/games/$gameId/edit");
-
-            return;
-        }
 
         (new GameService)->start($game);
         View::flash('Game gestart.');
@@ -113,14 +105,17 @@ class GameController
         header("Location: /admin/games/$gameId/edit");
     }
 
-    private function parseDatetimeLocal(?string $value): ?string
+    private function parseDutchDatetime(?string $value): ?string
     {
-        if ($value === null || trim($value) === '') {
+        $value = trim((string) $value);
+
+        if ($value === '') {
             return null;
         }
 
-        // <input type="datetime-local"> gives "2026-09-14T10:00".
-        return str_replace('T', ' ', $value).':00';
+        $date = \DateTimeImmutable::createFromFormat('d-m-Y H:i', $value);
+
+        return $date ? $date->format('Y-m-d H:i:s') : null;
     }
 
     private function guardPost(): void

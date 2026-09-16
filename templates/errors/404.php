@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="nl">
-<head><meta charset="utf-8"><title>404</title><link rel="stylesheet" href="/style.css"></head>
+<head><meta charset="utf-8"><title>404</title><link rel="stylesheet" href="<?= asset('/style.css') ?>"></head>
 <body>
 <div class="center-screen">
     <div class="card text-center">

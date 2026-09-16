@@ -22,13 +22,9 @@ function fmtDur(int $s): string
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Escape Room</title>
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="<?= asset('/style.css') ?>">
 </head>
 <body>
-<?php if ($state !== 'finished'): ?>
-<script>setTimeout(() => window.location.reload(), 5000);</script>
-<?php endif; ?>
-
 <div class="team-header">
     <span style="font-weight:600;color:#cbd5e1;"><?= View::e($team['name']) ?></span>
     <?php if ($game['status'] === 'running'): ?>
@@ -46,7 +42,8 @@ function fmtDur(int $s): string
     <div class="text-center" style="margin-top:3rem;">
         <div class="big-emoji">⏳</div>
         <h1>Nog even geduld</h1>
-        <p style="color:#94a3b8;">Het spel is nog niet gestart. Deze pagina ververst automatisch zodra het begint.</p>
+        <p style="color:#94a3b8;">Het spel is nog niet gestart.</p>
+        <a href="/play" class="btn w-full" style="display:block;margin-top:2rem;">Vernieuwen</a>
     </div>
 
 <?php elseif ($state === 'feedback'):
@@ -115,7 +112,8 @@ function fmtDur(int $s): string
     <div class="text-center" style="margin-top:3rem;">
         <div class="big-emoji">🚪</div>
         <h1>Geen kamer beschikbaar</h1>
-        <p style="color:#94a3b8;">Er is momenteel geen beschikbare kamer. Blijf op deze pagina, jullie krijgen automatisch een nieuwe kamer zodra er een vrijkomt.</p>
+        <p style="color:#94a3b8;">Er is momenteel geen beschikbare kamer. Klik op vernieuwen om te kijken of er een kamer is vrijgekomen.</p>
+        <a href="/play" class="btn w-full" style="display:block;margin-top:2rem;">Vernieuwen</a>
     </div>
 
 <?php elseif ($state === 'assigned'): ?>

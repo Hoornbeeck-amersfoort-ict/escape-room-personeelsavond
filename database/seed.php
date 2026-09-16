@@ -23,14 +23,22 @@ User::insert([
 
 $gameId = Game::insert(['name' => 'Personeelsavond Escape Room', 'status' => 'draft', 'start_time' => null, 'end_time' => null]);
 
+$usedCodes = [];
 for ($i = 1; $i <= 15; $i++) {
+    do {
+        $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+    } while (isset($usedCodes[$code]));
+    $usedCodes[$code] = true;
+
     Team::insert([
         'game_id' => $gameId,
         'name' => "Team $i",
-        'code_hash' => password_hash('1234', PASSWORD_DEFAULT),
-        'code' => '1234',
+        'code_hash' => password_hash($code, PASSWORD_DEFAULT),
+        'code' => $code,
         'active' => 1,
     ]);
+
+    echo "Team $i: $code\n";
 }
 
 $trivia = [
@@ -65,5 +73,5 @@ foreach ($trivia as [$name, $description, $instructions, $answer, $alternatives]
     ]);
 }
 
-echo "Seeded 1 game, 15 teams (PIN 1234), 17 rooms.\n";
+echo "Seeded 1 game, 15 teams (willekeurige pincodes hierboven), 17 rooms.\n";
 echo "Admin login: admin@example.com / password\n";

@@ -35,7 +35,9 @@ class PlayController
 
         if ($game['status'] === 'draft') {
             $viewData['state'] = 'not_started';
-        } elseif ($feedback !== null) {
+        } elseif ($feedback !== null && $feedback['type'] !== 'incorrect') {
+            // Een fout antwoord krijgt geen apart scherm: het team blijft in de
+            // kamer, met de foutmelding en het aantal resterende pogingen.
             $viewData['state'] = 'feedback';
         } elseif ($game['status'] === 'finished') {
             $viewData['state'] = 'finished';

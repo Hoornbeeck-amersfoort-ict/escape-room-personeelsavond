@@ -12,7 +12,7 @@ class GameService
     {
         Game::update((int) $game['id'], [
             'status' => 'running',
-            'start_time' => $game['start_time'] ?? Database::now(),
+            'start_time' => Database::now(),
         ]);
 
         return Game::find((int) $game['id']);
@@ -57,7 +57,9 @@ class GameService
             RoomSession::delete((int) $session['id']);
         }
 
-        Game::update((int) $game['id'], ['status' => 'draft']);
+        // Ook de tijden wissen: een eindtijd uit het verleden zou het spel direct
+        // na het opnieuw starten alweer beëindigen.
+        Game::update((int) $game['id'], ['status' => 'draft', 'start_time' => null, 'end_time' => null]);
 
         return Game::find((int) $game['id']);
     }
