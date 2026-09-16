@@ -1,0 +1,1 @@
+window.formatDuration=function(e){let t=Math.max(0,Math.floor(e)),n=Math.floor(t/3600),r=Math.floor(t%3600/60),i=t%60,a=e=>String(e).padStart(2,`0`);return n>0?`${a(n)}:${a(r)}:${a(i)}`:`${a(r)}:${a(i)}`};
