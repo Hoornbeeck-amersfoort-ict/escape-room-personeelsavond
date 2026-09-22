@@ -15,7 +15,7 @@ use App\View;
     </thead>
     <tbody>
         <?php if (empty($games)): ?>
-            <tr><td colspan="6" style="text-align:center;color:#64748b;padding:1.5rem;">Nog geen games aangemaakt.</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:#475569;padding:1.5rem;">Nog geen games aangemaakt.</td></tr>
         <?php else: foreach ($games as $game): ?>
             <tr>
                 <td><strong><?= View::e($game['name']) ?></strong></td>

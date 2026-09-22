@@ -8,7 +8,7 @@ use App\View;
 ?>
 <h1>Kamer bewerken — <?= View::e($game['name']) ?></h1>
 <div class="panel" style="max-width:40rem;">
-    <form method="POST" action="/admin/games/<?= (int) $game['id'] ?>/rooms/<?= (int) $room['id'] ?>">
+    <form method="POST" action="/admin/games/<?= (int) $game['id'] ?>/rooms/<?= (int) $room['id'] ?>" enctype="multipart/form-data">
         <?= Csrf::field() ?>
         <?php require __DIR__.'/_form.php'; ?>
         <button type="submit" class="w-full" style="margin-top:1rem;">Opslaan</button>

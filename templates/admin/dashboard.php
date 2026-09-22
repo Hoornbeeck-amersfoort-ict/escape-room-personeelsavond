@@ -15,12 +15,13 @@ use App\View;
 /** @var int|null $resettingSessionId */
 /** @var int|null $adjustingScoreSessionId */
 /** @var array|null $adjustingSession */
+/** @var string $fingerprint */
 
 $gameId = (int) $game['id'];
 $statusColor = match ($game['status']) {
     'running' => '#059669',
     'finished' => '#dc2626',
-    default => '#64748b',
+    default => '#475569',
 };
 function fmtDuration(int $seconds): string
 {
@@ -31,7 +32,7 @@ function fmtDuration(int $seconds): string
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
     <div>
         <h1 style="margin-bottom:.1rem;"><?= View::e($game['name']) ?></h1>
-        <p style="color:#64748b;">Status: <strong style="color:<?= $statusColor ?>;"><?= View::e(ucfirst($game['status'])) ?></strong></p>
+        <p style="color:#475569;">Status: <strong style="color:<?= $statusColor ?>;"><?= View::e(ucfirst($game['status'])) ?></strong></p>
     </div>
     <?php if ($game['status'] === 'running'): ?>
         <div id="event-timer" data-remaining="<?= $remainingEventSeconds ?>" style="background:#0f172a;color:#fbbf24;padding:.5rem 1rem;border-radius:.75rem;font-family:monospace;font-size:1.1rem;">
@@ -127,7 +128,7 @@ function fmtDuration(int $seconds): string
     <div class="overlay">
     <div class="panel" style="max-width:28rem;text-align:center;">
         <p><strong>Weet je zeker dat je deze sessie wilt resetten?</strong></p>
-        <p style="font-size:.85rem;color:#64748b;">De sessie wordt verwijderd en het team krijgt automatisch een nieuwe kamer.</p>
+        <p style="font-size:.85rem;color:#475569;">De sessie wordt verwijderd en het team krijgt automatisch een nieuwe kamer.</p>
         <div style="display:flex;gap:.5rem;margin-top:1rem;">
             <form method="POST" action="/admin/games/<?= $gameId ?>/dashboard/reset-session" style="flex:1;">
                 <?= Csrf::field() ?>
@@ -156,6 +157,26 @@ function fmtDuration(int $seconds): string
     </div>
     </div>
 <?php endif; ?>
+
+<script>
+    // Ververst alleen als er echt iets veranderde (team loste een kamer op,
+    // kreeg een nieuwe kamer, werd geblokkeerd). Staat er een venster open,
+    // dan wachten we: anders verdwijnt de score die je net intypte.
+    (() => {
+        const bekend = <?= json_encode($fingerprint) ?>;
+        setInterval(async () => {
+            if (document.querySelector('.overlay')) return;
+            try {
+                const antwoord = await fetch('<?= "/admin/games/$gameId/dashboard/status" ?>', { headers: { Accept: 'application/json' } });
+                if (! antwoord.ok) return;
+                const data = await antwoord.json();
+                if (data.fingerprint !== bekend) window.location.reload();
+            } catch (e) {
+                // Netwerk even weg: volgende ronde opnieuw proberen.
+            }
+        }, 3000);
+    })();
+</script>
 
 <script>
     // Cosmetisch doortikken; de server blijft de enige bron van waarheid.

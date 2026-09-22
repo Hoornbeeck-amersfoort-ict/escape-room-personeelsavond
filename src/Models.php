@@ -33,6 +33,45 @@ class Team extends Record
 {
     protected static string $table = 'teams';
 
+    /** Zo lang mag de teamleider wegvallen (tabblad dicht, telefoon leeg) voor de plek vrijkomt. */
+    public const SEAT_TIMEOUT_SECONDS = 90;
+
+    /** Houdt een ander apparaat dit team op dit moment bezet? */
+    public static function seatTakenByOther(array $team, string $sessionId): bool
+    {
+        if ($team['session_id'] === null || $team['session_id'] === $sessionId) {
+            return false;
+        }
+
+        if ($team['session_seen_at'] === null) {
+            return false;
+        }
+
+        return strtotime($team['session_seen_at']) > time() - self::SEAT_TIMEOUT_SECONDS;
+    }
+
+    public static function claimSeat(int $teamId, string $sessionId): void
+    {
+        self::update($teamId, ['session_id' => $sessionId, 'session_seen_at' => Database::now()]);
+    }
+
+    public static function releaseSeat(int $teamId): void
+    {
+        self::update($teamId, ['session_id' => null, 'session_seen_at' => null]);
+    }
+
+    /** Hartslag van de teamleider; schrijft hooguit eens per 15 seconden. */
+    public static function touchSeat(array $team): void
+    {
+        $laatst = $team['session_seen_at'] ? strtotime($team['session_seen_at']) : 0;
+
+        if ($laatst > time() - 15) {
+            return;
+        }
+
+        self::update((int) $team['id'], ['session_seen_at' => Database::now()]);
+    }
+
     public static function setCode(int $teamId, string $plainCode): void
     {
         self::update($teamId, [
@@ -77,6 +116,12 @@ class Room extends Record
     public static function activeTeamsCount(int $roomId): int
     {
         return RoomSession::count(['room_id' => $roomId, 'status' => RoomSession::OCCUPYING]);
+    }
+
+    /** Een exclusieve kamer is vol zodra er één team in zit. */
+    public static function isFull(array $room): bool
+    {
+        return (int) $room['exclusive'] === 1 && self::activeTeamsCount((int) $room['id']) > 0;
     }
 }
 

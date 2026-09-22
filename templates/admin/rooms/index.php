@@ -15,12 +15,23 @@ use App\View;
     <thead><tr><th>Naam</th><th>Antwoord</th><th>Status</th><th>Sessies</th><th></th></tr></thead>
     <tbody>
         <?php if (empty($rooms)): ?>
-            <tr><td colspan="5" style="text-align:center;color:#64748b;padding:1.5rem;">Nog geen kamers.</td></tr>
+            <tr><td colspan="5" style="text-align:center;color:#475569;padding:1.5rem;">Nog geen kamers.</td></tr>
         <?php else: foreach ($rooms as $room): ?>
             <tr>
-                <td><strong><?= View::e($room['name']) ?></strong></td>
+                <td>
+                    <strong><?= View::e($room['name']) ?></strong>
+                    <?php if (str_contains((string) $room['instructions'].$room['route_instructions'], '<img')): ?>
+                        <span title="Bevat een afbeelding">🖼️</span>
+                    <?php endif; ?>
+                    <?php if (trim((string) $room['route_instructions']) !== ''): ?>
+                        <span title="Heeft ook een opdracht onderweg">🚶</span>
+                    <?php endif; ?>
+                </td>
                 <td style="font-family:monospace;font-size:.8rem;"><?= View::e($room['answer']) ?></td>
-                <td><span class="pill <?= $room['active'] ? 'green' : 'red' ?>"><?= $room['active'] ? 'Actief' : 'Inactief' ?></span></td>
+                <td>
+                    <span class="pill <?= $room['active'] ? 'green' : 'red' ?>"><?= $room['active'] ? 'Actief' : 'Inactief' ?></span>
+                    <?php if ($room['exclusive']): ?><span class="pill" style="background:#e0e7ff;color:#3730a3;">1 team</span><?php endif; ?>
+                </td>
                 <td><?= (int) $room['room_sessions_count'] ?></td>
                 <td class="actions">
                     <a href="/admin/games/<?= (int) $game['id'] ?>/rooms/<?= (int) $room['id'] ?>/edit">Bewerken</a>

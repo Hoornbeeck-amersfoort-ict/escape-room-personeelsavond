@@ -21,6 +21,9 @@ $flash = View::pullFlash();
         <h1>ESCAPE ROOM</h1>
         <p class="subtitle">Log in met je teamnaam en teamcode</p>
         <?php if ($flash): ?><div class="flash"><?= View::e($flash) ?></div><?php endif; ?>
+        <?php if ($teams === []): ?>
+            <p style="color:#cbd5e1;">Er zijn nog geen teams aangemaakt. Vraag de organisator om teams toe te voegen.</p>
+        <?php else: ?>
         <form method="POST" action="/login" style="text-align:left;">
             <?= Csrf::field() ?>
             <label for="team_id">Team</label>
@@ -34,7 +37,8 @@ $flash = View::pullFlash();
             <input id="code" name="code" type="text" inputmode="numeric" maxlength="4" placeholder="••••" required>
             <button type="submit" class="w-full">START</button>
         </form>
-        <p style="margin-top:1.5rem;font-size:.85rem;color:#94a3b8;">Ben je organisator? <a href="/admin/login">Admin login</a></p>
+        <?php endif; ?>
+        <p style="margin-top:1.5rem;font-size:.85rem;color:#cbd5e1;">Ben je organisator? <a href="/admin/login">Admin login</a></p>
     </div>
 </div>
 </body>

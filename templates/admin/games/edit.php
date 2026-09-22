@@ -7,7 +7,7 @@ use App\View;
 $endValue = $game['end_time'] ? date('d-m-Y H:i', strtotime($game['end_time'])) : '';
 ?>
 <h1 style="margin-bottom:.25rem;"><?= View::e($game['name']) ?></h1>
-<p style="color:#64748b;margin-bottom:1.5rem;">Status: <strong><?= View::e(ucfirst($game['status'])) ?></strong></p>
+<p style="color:#475569;margin-bottom:1.5rem;">Status: <strong><?= View::e(ucfirst($game['status'])) ?></strong></p>
 
 <div class="grid-2">
     <div class="panel">

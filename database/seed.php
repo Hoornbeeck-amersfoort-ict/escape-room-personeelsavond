@@ -9,10 +9,21 @@ use App\Team;
 use App\User;
 
 $dbPath = __DIR__.'/../storage/database.sqlite';
-if (is_file($dbPath)) {
-    unlink($dbPath);
+
+// Ook -wal en -shm weg: in WAL-modus staan de laatste wijzigingen in die
+// bestanden, en een achtergebleven wal hoort niet bij een nieuwe database.
+foreach ([$dbPath, $dbPath.'-wal', $dbPath.'-shm'] as $bestand) {
+    if (is_file($bestand)) {
+        unlink($bestand);
+    }
 }
+
 touch($dbPath);
+
+// De kamers uit de oude database bestaan niet meer, dus hun afbeeldingen ook niet.
+foreach (glob(__DIR__.'/../storage/app/public/rooms/*') ?: [] as $oudeAfbeelding) {
+    unlink($oudeAfbeelding);
+}
 Database::connection()->exec(file_get_contents(__DIR__.'/schema.sql'));
 
 User::insert([

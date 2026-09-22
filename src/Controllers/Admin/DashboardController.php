@@ -78,7 +78,35 @@ class DashboardController
             'resettingSessionId' => $resettingSessionId,
             'adjustingScoreSessionId' => $adjustingScoreSessionId,
             'adjustingSession' => $adjustingSession,
+            'fingerprint' => $this->fingerprint($game),
         ], $game['name'], $game);
+    }
+
+    /** Zie PlayController::status(): het dashboard ververst alleen bij echte wijzigingen. */
+    public function status(string $gameId): void
+    {
+        header('Content-Type: application/json');
+        $game = Game::find((int) $gameId);
+        $game = (new GameService)->finalizeIfEnded($game);
+
+        echo json_encode(['fingerprint' => $this->fingerprint($game)]);
+    }
+
+    private function fingerprint(array $game): string
+    {
+        $parts = [$game['status'], (string) $game['end_time']];
+
+        foreach (RoomSession::where(['game_id' => $game['id']]) as $s) {
+            $parts[] = "s{$s['id']}:{$s['status']}:{$s['room_id']}:{$s['points']}";
+        }
+        foreach (Team::where(['game_id' => $game['id']]) as $t) {
+            $parts[] = "t{$t['id']}:{$t['active']}";
+        }
+        foreach (Room::where(['game_id' => $game['id']]) as $r) {
+            $parts[] = "r{$r['id']}:{$r['active']}";
+        }
+
+        return md5(implode('|', $parts));
     }
 
     public function assignRoom(string $gameId): void

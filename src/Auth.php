@@ -38,11 +38,32 @@ class Auth
 
         $team = Team::find((int) $_SESSION['team_id']);
 
-        // A blocked team is logged out on their very next request.
-        if ($team && (int) $team['active'] !== 1) {
+        if ($team === null) {
             self::logoutTeam();
 
             return null;
+        }
+
+        // A blocked team is logged out on their very next request.
+        if ((int) $team['active'] !== 1) {
+            Team::releaseSeat((int) $team['id']);
+            self::logoutTeam();
+
+            return null;
+        }
+
+        // Er kan maar één teamleider tegelijk zijn. Houdt een ander apparaat het
+        // team vast, dan is deze sessie de teamleider niet (meer) en vliegt hij eruit.
+        if ($team['session_id'] !== null && $team['session_id'] !== session_id()) {
+            self::logoutTeam();
+
+            return null;
+        }
+
+        if ($team['session_id'] === null) {
+            Team::claimSeat((int) $team['id'], session_id());
+        } else {
+            Team::touchSeat($team);
         }
 
         return $team;
@@ -56,6 +77,17 @@ class Auth
 
     public static function logoutTeam(): void
     {
+        $teamId = $_SESSION['team_id'] ?? null;
+
+        if ($teamId !== null) {
+            $team = Team::find((int) $teamId);
+
+            // Alleen de eigen plek vrijgeven, nooit die van een ander apparaat.
+            if ($team && $team['session_id'] === session_id()) {
+                Team::releaseSeat((int) $team['id']);
+            }
+        }
+
         unset($_SESSION['team_id']);
         session_regenerate_id(true);
     }

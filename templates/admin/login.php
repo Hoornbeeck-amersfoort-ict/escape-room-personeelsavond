@@ -27,6 +27,7 @@ $flash = View::pullFlash();
             <input id="password" name="password" type="password" required>
             <button type="submit" class="w-full">Inloggen</button>
         </form>
+        <a href="/" class="btn secondary w-full" style="display:block;margin-top:.6rem;">← Terug</a>
     </div>
 </div>
 </body>

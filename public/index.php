@@ -66,6 +66,11 @@ $router->get('/play', function () {
     requireTeam();
     (new PlayController)->show();
 });
+// Bewust zonder requireTeam: een uitgelogd (of geblokkeerd) team moet als
+// wijziging teruggemeld worden, niet als omleiding naar het inlogscherm.
+$router->get('/play/status', function () {
+    (new PlayController)->status();
+});
 $router->post('/play/start', function () {
     requireTeam();
     (new PlayController)->startRoom();
@@ -134,6 +139,10 @@ $router->get('/admin/games/{game}/dashboard', function ($game) {
     requireAdmin();
     (new DashboardController)->show($game);
 });
+$router->get('/admin/games/{game}/dashboard/status', function ($game) {
+    requireAdmin();
+    (new DashboardController)->status($game);
+});
 $router->post('/admin/games/{game}/dashboard/assign-room', function ($game) {
     requireAdmin();
     (new DashboardController)->assignRoom($game);
@@ -197,6 +206,11 @@ $router->get('/admin/games/{game}/rooms/create', function ($game) {
 $router->post('/admin/games/{game}/rooms', function ($game) {
     requireAdmin();
     (new RoomController)->store($game);
+});
+// Moet vóór /rooms/{room} staan: anders ziet de router "upload-image" als kamer-id.
+$router->post('/admin/games/{game}/rooms/upload-image', function ($game) {
+    requireAdmin();
+    (new RoomController)->uploadImage($game);
 });
 $router->get('/admin/games/{game}/rooms/{room}/edit', function ($game, $room) {
     requireAdmin();

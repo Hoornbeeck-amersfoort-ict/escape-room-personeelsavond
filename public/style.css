@@ -22,8 +22,8 @@ a { color: #d97706; }
     box-shadow: 0 10px 30px rgba(0,0,0,.3);
 }
 .card h1 { margin: 0 0 .25rem; font-size: 1.5rem; }
-.card p.subtitle { color: #94a3b8; margin: 0 0 1.5rem; }
-label { display: block; font-size: .85rem; margin-bottom: .25rem; color: #cbd5e1; }
+.card p.subtitle { color: #cbd5e1; margin: 0 0 1.5rem; }
+label { display: block; font-size: .9rem; font-weight: 600; margin-bottom: .3rem; color: #e2e8f0; }
 input[type=text], input[type=email], input[type=password], input[type=number],
 input[type=datetime-local], select, textarea {
     width: 100%;
@@ -35,6 +35,7 @@ input[type=datetime-local], select, textarea {
     color: #e2e8f0;
     font-size: 1rem;
 }
+::placeholder { color: #94a3b8; opacity: 1; }
 button, .btn {
     display: inline-block;
     background: #d97706;
@@ -50,29 +51,31 @@ button, .btn {
 }
 button.secondary, .btn.secondary { background: #334155; color: #e2e8f0; }
 button.danger, .btn.danger { background: #b91c1c; color: white; }
-button:disabled { opacity: .4; cursor: not-allowed; }
+button:disabled { opacity: .6; cursor: not-allowed; }
 .w-full { width: 100%; }
 input[readonly] { cursor: pointer; }
 
-/* Datum- en tijdkiezer */
-.dtp { max-width: 20rem; color: #e2e8f0; background: #1e293b; }
+/* Datum- en tijdkiezer: licht, net als de rest van de beheeromgeving */
+.panel.dtp { max-width: 20rem; background: white; color: #0f172a; }
 .dtp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
-.dtp-head strong { font-size: 1rem; }
-.dtp-nav { background: #334155; color: #e2e8f0; padding: .25rem .7rem; font-size: 1.1rem; line-height: 1; }
+.dtp-head strong { font-size: 1.05rem; color: #0f172a; }
+.dtp-nav { background: #e2e8f0; color: #0f172a; padding: .25rem .7rem; font-size: 1.1rem; line-height: 1; }
+.dtp-nav:hover { background: #cbd5e1; }
 .dtp-weekdays, .dtp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: .2rem; }
-.dtp-weekdays span { text-align: center; font-size: .7rem; color: #94a3b8; text-transform: uppercase; }
+.dtp-weekdays span { text-align: center; font-size: .75rem; color: #475569; text-transform: uppercase; font-weight: 700; }
 .dtp-days { margin-top: .3rem; }
 .dtp-day {
-    background: none; color: #e2e8f0; border-radius: .4rem;
-    padding: .4rem 0; font-size: .85rem; font-weight: 500;
+    background: none; color: #0f172a; border-radius: .4rem;
+    padding: .45rem 0; font-size: .9rem; font-weight: 600;
 }
-.dtp-day:hover { background: #334155; }
-.dtp-day.today { outline: 1px solid #475569; }
+.dtp-day:hover { background: #e2e8f0; }
+.dtp-day.today { outline: 2px solid #94a3b8; }
 .dtp-day.selected { background: #d97706; color: #0f172a; font-weight: 800; }
 .dtp-day.empty { visibility: hidden; }
 .dtp-time { display: flex; align-items: center; gap: .4rem; margin: 1rem 0 .25rem; }
-.dtp-time label { margin: 0; flex: 1; }
+.dtp-time label { margin: 0; flex: 1; color: #1e293b; }
 .dtp-time select { width: auto; margin-bottom: 0; padding: .4rem .5rem; }
+.dtp-time span { color: #0f172a; font-weight: 700; }
 .dtp-actions { display: flex; gap: .5rem; margin-top: 1rem; }
 .dtp-actions button { flex: 1; padding: .55rem .75rem; font-size: .9rem; }
 .flash {
@@ -86,7 +89,9 @@ input[readonly] { cursor: pointer; }
 
 /* Admin shell */
 .admin-shell { display: flex; min-height: 100vh; background: #f1f5f9; color: #0f172a; }
-.admin-shell a { color: #b45309; text-decoration: underline; }
+.admin-shell a { color: #9a4c04; text-decoration: underline; }
+/* De panelen zijn wit; het lichte label uit het donkere thema valt daar weg. */
+.admin-shell label { color: #1e293b; }
 .sidebar {
     width: 220px;
     background: #0f172a;
@@ -105,20 +110,20 @@ input[readonly] { cursor: pointer; }
 }
 .sidebar nav a.active, .sidebar nav a:hover { background: #1e293b; color: white; }
 .sidebar form { margin-top: 2rem; }
-.sidebar button.logout { background: none; border: none; color: #94a3b8; text-decoration: underline; padding: 0; font-weight: 400; cursor: pointer; }
+.sidebar button.logout { background: none; border: none; color: #cbd5e1; text-decoration: underline; padding: 0; font-weight: 400; cursor: pointer; }
 .admin-main { flex: 1; padding: 2rem; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; background: white; border-radius: .75rem; overflow: hidden; }
 table.dark { background: #1e293b; color: #e2e8f0; }
 th, td { text-align: left; padding: .65rem .85rem; font-size: .9rem; }
-thead { background: #f8fafc; text-transform: uppercase; font-size: .7rem; color: #64748b; }
-table.dark thead { background: #0f172a; color: #94a3b8; }
+thead { background: #f1f5f9; text-transform: uppercase; font-size: .75rem; font-weight: 700; color: #334155; }
+table.dark thead { background: #0f172a; color: #cbd5e1; }
 tbody tr { border-top: 1px solid #e2e8f0; }
 table.dark tbody tr { border-top: 1px solid #334155; }
 .panel { background: white; border-radius: .75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
 .tabs { display: flex; gap: .5rem; border-bottom: 1px solid #cbd5e1; margin-bottom: 1.5rem; }
-.tabs a { padding: .5rem 1rem; text-decoration: none; color: #64748b; border-bottom: 2px solid transparent; font-weight: 600; font-size: .9rem; }
+.tabs a { padding: .5rem 1rem; text-decoration: none; color: #334155; border-bottom: 2px solid transparent; font-weight: 600; font-size: .9rem; }
 .tabs a.active { color: #0f172a; border-color: #0f172a; }
 .pill { display: inline-block; padding: .2rem .5rem; border-radius: .3rem; font-size: .75rem; font-weight: 700; }
 .pill.green { background: #d1fae5; color: #065f46; }
@@ -132,6 +137,35 @@ table.dark tbody tr { border-top: 1px solid #334155; }
 .room-tile .count { font-size: 1.5rem; font-weight: 800; }
 .inline-form { display: inline; }
 .actions a, .actions button { margin-right: .6rem; font-size: .85rem; }
+/* Tekstverwerker in het beheer */
+.editor { margin-bottom: 1rem; }
+.editor-bar {
+    display: flex; flex-wrap: wrap; gap: .25rem; padding: .4rem;
+    background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom: none;
+    border-radius: .5rem .5rem 0 0;
+}
+.editor-bar[hidden] { display: none; }
+.editor-bar-image { border-radius: 0; background: #fef3c7; border-color: #fcd34d; }
+.editor-knop {
+    background: white; color: #0f172a; border: 1px solid #cbd5e1;
+    border-radius: .35rem; padding: .3rem .55rem; font-size: .8rem; font-weight: 600;
+}
+.editor-knop:hover { background: #e2e8f0; }
+.editor-knop:disabled { opacity: .5; }
+.editor-hint { font-size: .8rem; color: #475569; align-self: center; margin-right: .25rem; font-weight: 700; }
+.editor-area {
+    min-height: 9rem; max-height: 28rem; overflow-y: auto;
+    padding: .75rem; background: white; color: #0f172a;
+    border: 1px solid #cbd5e1; border-radius: 0 0 .5rem .5rem;
+}
+.editor-area:focus { outline: 2px solid #d97706; }
+.editor-area img { max-width: 100%; cursor: pointer; border-radius: .4rem; }
+.editor-area img.is-gekozen { outline: 3px solid #d97706; }
+.editor-area h2 { font-size: 1.2rem; margin: .4rem 0; }
+.editor-area h3 { font-size: 1.05rem; margin: .4rem 0; }
+.editor-area p { margin: .4rem 0; }
+.editor-area::after { content: ""; display: block; clear: both; }
+
 .overlay {
     position: fixed; inset: 0; background: rgba(15, 23, 42, .55);
     display: flex; padding: 1rem; overflow-y: auto; z-index: 50;
@@ -150,5 +184,25 @@ table.dark tbody tr { border-top: 1px solid #334155; }
 .text-center { text-align: center; }
 .big-emoji { font-size: 3.5rem; }
 .room-box { background: #1e293b; border-radius: 1rem; padding: 1rem; margin: 1rem 0; }
-.attempts-row { display: flex; justify-content: space-between; color: #94a3b8; font-size: .9rem; margin-bottom: 1rem; }
+/* Opdrachtinhoud uit de editor, op het teamscherm */
+.rich { overflow: hidden; }
+.rich img { max-width: 100%; height: auto; border-radius: .5rem; }
+.rich p { margin: .5rem 0; }
+.rich h2 { font-size: 1.25rem; margin: .6rem 0 .3rem; }
+.rich h3 { font-size: 1.05rem; margin: .6rem 0 .3rem; }
+.rich ul, .rich ol { margin: .5rem 0; padding-left: 1.25rem; }
+.rich li { margin: .2rem 0; }
+.rich::after { content: ""; display: block; clear: both; }
+/* Puzzelroosters: strak, leesbaar, en ze passen ook op een telefoon. */
+.rich table { width: 100%; border-collapse: collapse; margin: .75rem 0; background: none; border-radius: 0; }
+.rich td, .rich th {
+    border: 1px solid #475569; padding: .3rem .1rem; text-align: center;
+    font-family: monospace; font-size: 1rem; font-weight: 700;
+}
+.rich table img { display: block; margin: 0 auto; }
+@media (max-width: 520px) {
+    /* Op een telefoon is zwevende tekst naast een plaatje niet te lezen. */
+    .rich img { float: none !important; display: block !important; width: 100% !important; margin: .75rem 0 !important; }
+}
+.attempts-row { display: flex; justify-content: space-between; color: #cbd5e1; font-size: .9rem; margin-bottom: 1rem; }
 .error-box { background: #450a0a; color: #fca5a5; padding: .75rem 1rem; border-radius: .75rem; margin-bottom: 1rem; }

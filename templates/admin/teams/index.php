@@ -15,7 +15,7 @@ use App\View;
     <thead><tr><th>Naam</th><th>Code</th><th>Status</th><th>Sessies</th><th></th></tr></thead>
     <tbody>
         <?php if (empty($teams)): ?>
-            <tr><td colspan="5" style="text-align:center;color:#64748b;padding:1.5rem;">Nog geen teams.</td></tr>
+            <tr><td colspan="5" style="text-align:center;color:#475569;padding:1.5rem;">Nog geen teams.</td></tr>
         <?php else: foreach ($teams as $team): ?>
             <tr>
                 <td><strong><?= View::e($team['name']) ?></strong></td>

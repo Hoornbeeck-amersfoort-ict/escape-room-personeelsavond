@@ -9,7 +9,6 @@ use App\Room;
 use App\RoomSession;
 use App\Services\GameService;
 use App\Services\GameTimerService;
-use App\Services\LeaderboardService;
 use App\Services\RoomAssignmentService;
 use App\Services\RoomSessionActions;
 use App\View;
@@ -68,7 +67,63 @@ class PlayController
             }
         }
 
+        $viewData['fingerprint'] = $this->fingerprint($team);
+
         echo View::render('team/play', $viewData);
+    }
+
+    /**
+     * Vertelt de pagina of er iets veranderd is (nieuwe kamer, gereset, spel
+     * gestart of afgelopen). Zo hoeft er niet blind elke paar seconden
+     * herladen te worden: de pagina ververst alleen als het nodig is.
+     */
+    public function status(): void
+    {
+        header('Content-Type: application/json');
+        $team = Auth::team();
+
+        if (! $team) {
+            echo json_encode(['fingerprint' => 'uitgelogd']);
+
+            return;
+        }
+
+        echo json_encode(['fingerprint' => $this->fingerprint($team)]);
+    }
+
+    private function fingerprint(array $team): string
+    {
+        $game = Game::find((int) $team['game_id']);
+        $game = (new GameService)->finalizeIfEnded($game);
+        $session = $this->currentSession((int) $team['id']);
+
+        $delen = [
+            $game['status'],
+            (string) $game['end_time'],
+            $session['id'] ?? '-',
+            $session['status'] ?? '-',
+            $session['room_id'] ?? '-',
+        ];
+
+        // Zonder kamer staat het team te wachten (bijvoorbeeld op een kamer waar
+        // maar één team in mag). Dan telt de bezetting mee, zodat het wachtscherm
+        // vanzelf doorgaat zodra er een kamer vrijkomt.
+        if ($session === null) {
+            $bezet = array_map(
+                fn ($s) => (int) $s['room_id'],
+                RoomSession::where(['game_id' => $game['id'], 'status' => RoomSession::OCCUPYING])
+            );
+            sort($bezet);
+
+            $kamers = array_map(
+                fn ($r) => $r['id'].':'.$r['active'].':'.$r['exclusive'],
+                Room::where(['game_id' => $game['id']])
+            );
+
+            $delen[] = md5(implode(',', $bezet).'|'.implode(',', $kamers));
+        }
+
+        return implode('|', $delen);
     }
 
     public function startRoom(): void
@@ -180,23 +235,18 @@ class PlayController
         ];
     }
 
+    /**
+     * Alleen de eigen cijfers. Bewust niet via de ranglijst: de klassering is
+     * voor de organisator, dus die hoort ook niet op de teampagina te staan.
+     */
     private function ownResult(array $team, array $game): array
     {
-        $standings = (new LeaderboardService)->standings($game);
-        $own = null;
-        foreach ($standings as $row) {
-            if ((int) $row['team']['id'] === (int) $team['id']) {
-                $own = $row;
-                break;
-            }
-        }
+        $sessions = RoomSession::where(['team_id' => $team['id'], 'game_id' => $game['id']]);
 
         return [
-            'points' => $own['points'] ?? 0,
-            'active_seconds' => $own['active_seconds'] ?? 0,
-            'rooms_played' => $own['rooms_played'] ?? 0,
-            'rank' => $own['rank'] ?? count($standings),
-            'total_teams' => count($standings),
+            'points' => array_sum(array_column($sessions, 'points')),
+            'active_seconds' => (new GameTimerService)->totalActiveSecondsForTeam((int) $team['id'], (int) $game['id']),
+            'rooms_played' => count(array_filter($sessions, fn ($s) => in_array($s['status'], RoomSession::PLAYED, true))),
         ];
     }
 }

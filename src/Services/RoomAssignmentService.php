@@ -39,7 +39,12 @@ class RoomAssignmentService
                 return ['outcome' => self::ALL_ROOMS_PLAYED];
             }
 
-            $candidateRooms = array_values(array_filter($unplayedRooms, fn ($r) => (int) $r['active'] === 1));
+            // Een exclusieve kamer die bezet is telt niet mee: het team wacht
+            // liever even dan dat er twee teams in dezelfde kamer staan.
+            $candidateRooms = array_values(array_filter(
+                $unplayedRooms,
+                fn ($r) => (int) $r['active'] === 1 && ! Room::isFull($r)
+            ));
 
             if ($candidateRooms === []) {
                 return ['outcome' => self::WAITING];

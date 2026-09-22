@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS teams (
     code_hash TEXT NOT NULL,
     code TEXT,
     active INTEGER NOT NULL DEFAULT 1,
+    -- Eén teamleider tegelijk: de sessie die het team nu bezet houdt.
+    session_id TEXT,
+    session_seen_at TEXT,
     created_at TEXT,
     updated_at TEXT,
     UNIQUE(game_id, name)
@@ -39,8 +42,11 @@ CREATE TABLE IF NOT EXISTS rooms (
     name TEXT NOT NULL,
     description TEXT,
     instructions TEXT,
+    route_instructions TEXT,  -- opdracht op het "ga naar deze kamer"-scherm (HTML)
     answer TEXT NOT NULL,
     alternative_answers TEXT, -- JSON array
+    image_path TEXT,          -- oude losse afbeelding; staat nu in de inhoud zelf
+    exclusive INTEGER NOT NULL DEFAULT 0, -- 1 = er mag maar één team tegelijk in
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT,
     updated_at TEXT,
