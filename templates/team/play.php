@@ -12,6 +12,11 @@ use App\View;
 /** @var array|null $session */
 /** @var array|null $room */
 /** @var string $fingerprint */
+/** @var string|null $supportPhone */
+/** @var string|null $supportNote */
+/** @var bool $chatEnabled */
+/** @var array $chatMessages */
+/** @var string|null $pendingImagePath */
 
 function fmtDur(int $s): string
 {
@@ -138,6 +143,16 @@ function fmtDur(int $s): string
                 </form>
             </div>
 
+        <?php elseif ($state === 'pending_review'): ?>
+            <div class="text-center" style="margin-top:2rem;">
+                <div class="big-emoji">🕵️</div>
+                <h1>Antwoord wordt beoordeeld</h1>
+                <p style="color:#cbd5e1;">Jullie foto is verstuurd. De organisatie beoordeelt hem zo snel mogelijk. Deze pagina ververst vanzelf zodra de uitslag bekend is.</p>
+                <?php if ($pendingImagePath): ?>
+                    <img src="/storage/answers/<?= View::e($pendingImagePath) ?>" alt="" style="max-width:100%;border-radius:.75rem;margin-top:1rem;">
+                <?php endif; ?>
+            </div>
+
         <?php elseif ($state === 'active'): ?>
             <p style="text-align:center;text-transform:uppercase;letter-spacing:.1em;color:#cbd5e1;font-size:.85rem;">
                 <?= View::e(mb_strtoupper($room['name'])) ?>
@@ -171,6 +186,16 @@ function fmtDur(int $s): string
                 <button type="submit" class="w-full">ANTWOORD CONTROLEREN</button>
             </form>
 
+            <?php if ((int) ($room['allow_image_answer'] ?? 0) === 1): ?>
+                <form method="POST" action="/play/answer-image" enctype="multipart/form-data" style="margin-top:1rem;">
+                    <?= Csrf::field() ?>
+                    <label for="image">Of stuur een foto als antwoord:</label>
+                    <input id="image" name="image" type="file" accept="image/*" capture="environment" required style="margin-bottom:1rem;">
+                    <button type="submit" class="w-full secondary">FOTO INSTUREN</button>
+                </form>
+                <p style="font-size:.8rem;color:#cbd5e1;text-align:center;margin-top:.5rem;">Een foto wordt door de organisatie bekeken en telt ook als een poging.</p>
+            <?php endif; ?>
+
             <form method="POST" action="/play/give-up"
                 onsubmit="return confirm('Weet je zeker dat je deze kamer wilt opgeven? Je krijgt 0 punten en kunt de kamer niet opnieuw spelen.');"
                 style="margin-top:1.5rem;text-align:center;">
@@ -182,6 +207,48 @@ function fmtDur(int $s): string
         <?php endif; ?>
 
     </main>
+
+    <?php if ($supportPhone || $chatEnabled): ?>
+        <button type="button" id="help-toggle" class="help-toggle" aria-label="Hulp">💬</button>
+        <div id="help-panel" class="help-panel" hidden>
+            <div class="help-panel-head">
+                <strong>Hulp nodig?</strong>
+                <button type="button" id="help-close" aria-label="Sluiten">✕</button>
+            </div>
+
+            <?php if ($supportPhone): ?>
+                <a href="tel:<?= View::e(preg_replace('/\s+/', '', $supportPhone)) ?>" class="btn w-full" style="display:block;margin-bottom:.5rem;">
+                    📞 Bel <?= View::e($supportPhone) ?>
+                </a>
+                <?php if ($supportNote): ?><p style="font-size:.8rem;color:#cbd5e1;margin:-.25rem 0 .75rem;"><?= View::e($supportNote) ?></p><?php endif; ?>
+            <?php endif; ?>
+
+            <?php if ($chatEnabled): ?>
+                <div id="chat-log" class="chat-log">
+                    <?php foreach ($chatMessages as $m): $mine = $m['sender'] === 'team'; ?>
+                        <div class="chat-bubble <?= $mine ? 'mine' : 'theirs' ?>"><?= nl2br(View::e($m['body'])) ?></div>
+                    <?php endforeach; ?>
+                    <?php if ($chatMessages === []): ?><p style="font-size:.8rem;color:#94a3b8;">Stel hier je vraag aan de organisatie.</p><?php endif; ?>
+                </div>
+                <form method="POST" action="/play/chat" style="display:flex;gap:.4rem;margin-top:.5rem;">
+                    <?= Csrf::field() ?>
+                    <input type="text" name="body" placeholder="Typ een bericht…" autocomplete="off" required style="margin:0;flex:1;">
+                    <button type="submit">&rarr;</button>
+                </form>
+            <?php endif; ?>
+        </div>
+        <script>
+            (() => {
+                const toggle = document.getElementById('help-toggle');
+                const panel = document.getElementById('help-panel');
+                const close = document.getElementById('help-close');
+                const log = document.getElementById('chat-log');
+                const open = () => { panel.hidden = false; if (log) log.scrollTop = log.scrollHeight; };
+                toggle.addEventListener('click', open);
+                close.addEventListener('click', () => { panel.hidden = true; });
+            })();
+        </script>
+    <?php endif; ?>
 
     <?php if ($state !== 'finished'): ?>
         <script>

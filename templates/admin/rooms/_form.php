@@ -50,3 +50,10 @@ $editor = function (string $naam, ?string $waarde) use ($uploadUrl) {
     <input type="checkbox" name="active" value="1" <?= ($room['active'] ?? true) ? 'checked' : '' ?> style="width:auto;margin:0;">
     Actief (kamer kan toegewezen worden)
 </label>
+
+<label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-top:.5rem;">
+    <input type="hidden" name="allow_image_answer" value="0">
+    <input type="checkbox" name="allow_image_answer" value="1" <?= ($room['allow_image_answer'] ?? false) ? 'checked' : '' ?> style="width:auto;margin:0;">
+    Foto-antwoord toestaan
+</label>
+<p style="font-size:.75rem;color:#475569;margin:-.2rem 0 0;">Naast (of in plaats van) een tekstantwoord mag het team een foto insturen, bijvoorbeeld van een gebouwde constructie. Een foto wordt altijd handmatig beoordeeld op de pagina "Antwoorden beoordelen".</p>

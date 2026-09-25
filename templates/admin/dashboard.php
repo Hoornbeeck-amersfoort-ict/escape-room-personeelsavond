@@ -15,6 +15,10 @@ use App\View;
 /** @var int|null $resettingSessionId */
 /** @var int|null $adjustingScoreSessionId */
 /** @var array|null $adjustingSession */
+/** @var int $pendingReviewCount */
+/** @var int $unreadChatCount */
+/** @var int $activeTeamsCount */
+/** @var int $roomsFullCount */
 /** @var string $fingerprint */
 
 $gameId = (int) $game['id'];
@@ -39,6 +43,25 @@ function fmtDuration(int $seconds): string
             Nog <?= fmtDuration($remainingEventSeconds) ?>
         </div>
     <?php endif; ?>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-tile">
+        <span class="summary-count"><?= $activeTeamsCount ?></span>
+        <span class="summary-label">actieve teams</span>
+    </div>
+    <a href="/admin/games/<?= $gameId ?>/answers" class="summary-tile <?= $pendingReviewCount > 0 ? 'attention' : '' ?>">
+        <span class="summary-count"><?= $pendingReviewCount ?></span>
+        <span class="summary-label">foto's te beoordelen</span>
+    </a>
+    <a href="/admin/games/<?= $gameId ?>/chat" class="summary-tile <?= $unreadChatCount > 0 ? 'attention' : '' ?>">
+        <span class="summary-count"><?= $unreadChatCount ?></span>
+        <span class="summary-label">ongelezen chatberichten</span>
+    </a>
+    <div class="summary-tile">
+        <span class="summary-count"><?= $roomsFullCount ?></span>
+        <span class="summary-label">volle kamers</span>
+    </div>
 </div>
 
 <div class="tabs">

@@ -2,8 +2,10 @@
 
 namespace App\Controllers\Admin;
 
+use App\AnswerAttempt;
 use App\Auth;
 use App\AuditLog;
+use App\ChatMessage;
 use App\Csrf;
 use App\Game;
 use App\Room;
@@ -78,6 +80,10 @@ class DashboardController
             'resettingSessionId' => $resettingSessionId,
             'adjustingScoreSessionId' => $adjustingScoreSessionId,
             'adjustingSession' => $adjustingSession,
+            'pendingReviewCount' => AnswerAttempt::pendingReviewCount((int) $game['id']),
+            'unreadChatCount' => ChatMessage::unreadByAdminCount((int) $game['id']),
+            'activeTeamsCount' => count(array_filter($teams, fn ($t) => (int) $t['active'] === 1)),
+            'roomsFullCount' => count(array_filter($rooms, fn ($r) => Room::isFull($r))),
             'fingerprint' => $this->fingerprint($game),
         ], $game['name'], $game);
     }
@@ -105,6 +111,9 @@ class DashboardController
         foreach (Room::where(['game_id' => $game['id']]) as $r) {
             $parts[] = "r{$r['id']}:{$r['active']}";
         }
+
+        $parts[] = 'pending'.AnswerAttempt::pendingReviewCount((int) $game['id']);
+        $parts[] = 'unread'.ChatMessage::unreadByAdminCount((int) $game['id']);
 
         return md5(implode('|', $parts));
     }

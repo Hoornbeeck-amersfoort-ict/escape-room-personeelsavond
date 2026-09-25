@@ -54,6 +54,7 @@ class RoomController
             'alternative_answers' => json_encode($data['alternative_answers']),
             'exclusive' => $data['exclusive'],
             'active' => $data['active'],
+            'allow_image_answer' => $data['allow_image_answer'],
         ]);
 
         View::flash("Kamer \"{$data['name']}\" aangemaakt.");
@@ -82,6 +83,7 @@ class RoomController
             'alternative_answers' => json_encode($data['alternative_answers']),
             'exclusive' => $data['exclusive'],
             'active' => $data['active'],
+            'allow_image_answer' => $data['allow_image_answer'],
         ]);
 
         // Afbeeldingen die uit de tekst gehaald zijn, hoeven niet te blijven staan.
@@ -166,6 +168,7 @@ class RoomController
             'alternative_answers' => $alternatives,
             'exclusive' => ($_POST['exclusive'] ?? '0') === '1' ? 1 : 0,
             'active' => ($_POST['active'] ?? '0') === '1' ? 1 : 0,
+            'allow_image_answer' => ($_POST['allow_image_answer'] ?? '0') === '1' ? 1 : 0,
         ];
     }
 
