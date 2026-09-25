@@ -71,7 +71,15 @@ class AnswerReviewController
             AuditLog::log((int) $admin['id'], $approve ? 'answer.approve' : 'answer.reject', AnswerAttempt::class, (int) $attempt['id']);
         }
 
-        header("Location: /admin/games/$gameId/answers");
+        header('Location: '.$this->safeRedirect($gameId, "/admin/games/$gameId/answers"));
+    }
+
+    /** Staat toe dat deze actie ook vanaf het overzicht (dashboard) uitgevoerd wordt en daarnaar terugkeert. */
+    private function safeRedirect(string $gameId, string $default): string
+    {
+        $redirect = (string) ($_POST['redirect'] ?? '');
+
+        return str_starts_with($redirect, "/admin/games/$gameId/") ? $redirect : $default;
     }
 
     private function fingerprint(array $game): string

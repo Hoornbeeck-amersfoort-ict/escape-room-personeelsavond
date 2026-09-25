@@ -20,6 +20,8 @@ use RuntimeException;
 
 class PlayController
 {
+    private const MAX_ANSWER_IMAGE_MB = 20;
+
     public function show(): void
     {
         $team = Auth::team();
@@ -242,7 +244,7 @@ class PlayController
         }
 
         try {
-            $path = (new ImageUpload(8))->store($_FILES['image'] ?? null, self::answersDirectory());
+            $path = (new ImageUpload(self::MAX_ANSWER_IMAGE_MB))->store($_FILES['image'] ?? null, self::answersDirectory());
 
             if ($path === null) {
                 throw new RuntimeException('Er is geen foto ontvangen.');

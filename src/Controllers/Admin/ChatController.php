@@ -88,7 +88,9 @@ class ChatController
             ChatMessage::markReadByAdmin((int) $team['id']);
         }
 
-        header("Location: /admin/games/$gameId/chat/$teamId");
+        $default = "/admin/games/$gameId/chat/$teamId";
+        $redirect = (string) ($_POST['redirect'] ?? '');
+        header('Location: '.(str_starts_with($redirect, "/admin/games/$gameId/") ? $redirect : $default));
     }
 
     private function fingerprint(array $game): string

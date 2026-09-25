@@ -12,8 +12,12 @@ are all here, ported logic-for-logic from the original app's services.
 
 ```bash
 php database/seed.php
-php -S localhost:8001 -t public public/index.php
+php -d upload_max_filesize=20M -d post_max_size=21M -S localhost:8001 -t public public/index.php
 ```
+
+The `-d` flags raise PHP's upload limit so foto-antwoorden up to 20MB come
+through; the built-in server ignores `public/.user.ini` (that one only
+applies under php-fpm/Apache in a real deployment).
 
 Then open `http://localhost:8001` (team login) and
 `http://localhost:8001/admin/login` (admin: `admin@example.com` / `password`,
