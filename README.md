@@ -8,6 +8,14 @@ in this repo's git history if you ever want it back.)
 Team login, room assignment, scoring, timers, and the full admin dashboard
 are all here, ported logic-for-logic from the original app's services.
 
+## Instellen
+
+`.env` staat niet in git (alleen `.env.example`), dus begin met een eigen kopie:
+
+```bash
+cp .env.example .env
+```
+
 ## Database
 
 De verbinding komt uit `.env`, niet meer uit de code. Standaard MySQL:
