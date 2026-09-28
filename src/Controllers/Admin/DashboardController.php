@@ -2,8 +2,10 @@
 
 namespace App\Controllers\Admin;
 
+use App\AnswerAttempt;
 use App\Auth;
 use App\AuditLog;
+use App\ChatMessage;
 use App\Csrf;
 use App\Game;
 use App\Room;
@@ -66,6 +68,36 @@ class DashboardController
         $adjustingScoreSessionId = isset($_GET['adjust_score']) ? (int) $_GET['adjust_score'] : null;
         $adjustingSession = $adjustingScoreSessionId ? RoomSession::find($adjustingScoreSessionId) : null;
 
+        $pendingAnswers = array_map(function ($attempt) {
+            $session = RoomSession::find((int) $attempt['room_session_id']);
+
+            return [
+                'attempt' => $attempt,
+                'room' => $session ? Room::find((int) $session['room_id']) : null,
+                'team' => $session ? Team::find((int) $session['team_id']) : null,
+            ];
+        }, AnswerAttempt::pendingReview((int) $game['id']));
+
+        $chatRows = array_map(function ($team) {
+            $messages = \App\ChatMessage::forTeam((int) $team['id']);
+
+            return [
+                'team' => $team,
+                'unread' => ChatMessage::unreadByAdminCountForTeam((int) $team['id']),
+                'last' => end($messages) ?: null,
+            ];
+        }, $teams);
+        usort($chatRows, function ($a, $b) {
+            if ($a['unread'] !== $b['unread']) {
+                return $b['unread'] <=> $a['unread'];
+            }
+
+            return ($b['last']['id'] ?? 0) <=> ($a['last']['id'] ?? 0);
+        });
+        // Alleen teams met een gesprek (of een onbeantwoord bericht) horen bij "monitoren";
+        // teams die nog niets gezegd hebben, hoeven hier geen lege rij te krijgen.
+        $chatRows = array_values(array_filter($chatRows, fn ($row) => $row['last'] !== null));
+
         echo View::renderAdmin('admin/dashboard', [
             'game' => $game,
             'tab' => $tab,
@@ -78,6 +110,12 @@ class DashboardController
             'resettingSessionId' => $resettingSessionId,
             'adjustingScoreSessionId' => $adjustingScoreSessionId,
             'adjustingSession' => $adjustingSession,
+            'pendingReviewCount' => AnswerAttempt::pendingReviewCount((int) $game['id']),
+            'unreadChatCount' => ChatMessage::unreadByAdminCount((int) $game['id']),
+            'activeTeamsCount' => count(array_filter($teams, fn ($t) => (int) $t['active'] === 1)),
+            'roomsFullCount' => count(array_filter($rooms, fn ($r) => Room::isFull($r))),
+            'pendingAnswers' => $pendingAnswers,
+            'chatRows' => $chatRows,
             'fingerprint' => $this->fingerprint($game),
         ], $game['name'], $game);
     }
@@ -105,6 +143,9 @@ class DashboardController
         foreach (Room::where(['game_id' => $game['id']]) as $r) {
             $parts[] = "r{$r['id']}:{$r['active']}";
         }
+
+        $parts[] = 'pending'.AnswerAttempt::pendingReviewCount((int) $game['id']);
+        $parts[] = 'unread'.ChatMessage::unreadByAdminCount((int) $game['id']);
 
         return md5(implode('|', $parts));
     }

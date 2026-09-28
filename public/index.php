@@ -12,25 +12,35 @@ require __DIR__.'/../src/autoload.php';
 require __DIR__.'/../src/helpers.php';
 
 use App\Auth;
+use App\Controllers\Admin\AnswerReviewController;
 use App\Controllers\Admin\AuditLogController;
+use App\Controllers\Admin\ChatController as AdminChatController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\GameController;
 use App\Controllers\Admin\RoomController;
+use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\TeamController;
 use App\Controllers\AdminAuthController;
 use App\Controllers\PlayController;
 use App\Controllers\TeamAuthController;
 use App\Database;
 use App\Router;
+use App\Services\PhpMyAdminProxy;
 use App\View;
 
 session_start();
 
-// Bootstrap the SQLite file from schema.sql if this is a fresh checkout.
-$dbPath = __DIR__.'/../storage/database.sqlite';
-if (! is_file($dbPath)) {
-    touch($dbPath);
-    Database::connection()->exec(file_get_contents(__DIR__.'/../database/schema.sql'));
+// Bootstrap een lege database uit het schema als dit een verse installatie is.
+// Bij SQLite moet het bestand er eerst zijn; bij MySQL bestaat de database al
+// (door phpMyAdmin of de hoster aangemaakt) en maken we alleen de tabellen.
+if (! Database::isMysql()) {
+    $dbPath = __DIR__.'/../storage/database.sqlite';
+    if (! is_file($dbPath)) {
+        touch($dbPath);
+    }
+}
+if (! Database::hasTables()) {
+    Database::createSchema();
 }
 
 function requireTeam(): void
@@ -47,6 +57,17 @@ function requireAdmin(): void
         header('Location: /admin/login');
         exit;
     }
+}
+
+// phpMyAdmin hangt onder de eigen URL van de app: alles onder /phpmyadmin gaat
+// naar de bestaande phpMyAdmin-server (zie PHPMYADMIN_URL in .env). Dit staat
+// vóór de router, omdat phpMyAdmin paden van willekeurige diepte en alle
+// methodes gebruikt; alleen een ingelogde beheerder komt erlangs.
+$requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+if (PhpMyAdminProxy::handles($requestPath)) {
+    requireAdmin();
+    (new PhpMyAdminProxy)->handle($_SERVER['REQUEST_URI']);
+    exit;
 }
 
 $router = new Router;
@@ -82,6 +103,18 @@ $router->post('/play/answer', function () {
 $router->post('/play/give-up', function () {
     requireTeam();
     (new PlayController)->giveUp();
+});
+$router->post('/play/answer-image', function () {
+    requireTeam();
+    (new PlayController)->submitImageAnswer();
+});
+$router->post('/play/chat', function () {
+    requireTeam();
+    (new PlayController)->sendChatMessage();
+});
+$router->post('/play/chat/read', function () {
+    requireTeam();
+    (new PlayController)->markChatRead();
 });
 
 // Admin auth.
@@ -227,6 +260,56 @@ $router->post('/admin/games/{game}/rooms/{room}/delete', function ($game, $room)
 $router->post('/admin/games/{game}/rooms/{room}/toggle-active', function ($game, $room) {
     requireAdmin();
     (new RoomController)->toggleActive($game, $room);
+});
+
+// Admin: foto-antwoorden beoordelen.
+$router->get('/admin/games/{game}/answers', function ($game) {
+    requireAdmin();
+    (new AnswerReviewController)->index($game);
+});
+$router->get('/admin/games/{game}/answers/status', function ($game) {
+    requireAdmin();
+    (new AnswerReviewController)->status($game);
+});
+$router->post('/admin/games/{game}/answers/{attempt}/approve', function ($game, $attempt) {
+    requireAdmin();
+    (new AnswerReviewController)->approve($game, $attempt);
+});
+$router->post('/admin/games/{game}/answers/{attempt}/reject', function ($game, $attempt) {
+    requireAdmin();
+    (new AnswerReviewController)->reject($game, $attempt);
+});
+
+// Admin: chat met teams.
+$router->get('/admin/games/{game}/chat', function ($game) {
+    requireAdmin();
+    (new AdminChatController)->index($game);
+});
+$router->get('/admin/games/{game}/chat/status', function ($game) {
+    requireAdmin();
+    (new AdminChatController)->status($game);
+});
+$router->get('/admin/games/{game}/chat/{team}', function ($game, $team) {
+    requireAdmin();
+    (new AdminChatController)->show($game, $team);
+});
+$router->get('/admin/games/{game}/chat/{team}/status', function ($game, $team) {
+    requireAdmin();
+    (new AdminChatController)->threadStatus($game, $team);
+});
+$router->post('/admin/games/{game}/chat/{team}/send', function ($game, $team) {
+    requireAdmin();
+    (new AdminChatController)->send($game, $team);
+});
+
+// Admin: instellingen (globaal, niet per spel).
+$router->get('/admin/settings', function () {
+    requireAdmin();
+    (new SettingsController)->edit();
+});
+$router->post('/admin/settings', function () {
+    requireAdmin();
+    (new SettingsController)->update();
 });
 
 $router->get('/admin/audit-logs', function () {

@@ -8,23 +8,33 @@ use App\Room;
 use App\Team;
 use App\User;
 
-$dbPath = __DIR__.'/../storage/database.sqlite';
-
-// Ook -wal en -shm weg: in WAL-modus staan de laatste wijzigingen in die
-// bestanden, en een achtergebleven wal hoort niet bij een nieuwe database.
-foreach ([$dbPath, $dbPath.'-wal', $dbPath.'-shm'] as $bestand) {
-    if (is_file($bestand)) {
-        unlink($bestand);
+// Verse start: bij SQLite gooien we het bestand weg, bij MySQL de tabellen.
+if (Database::isMysql()) {
+    $pdo = Database::connection();
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    foreach (['audit_logs', 'settings', 'chat_messages', 'answer_attempts', 'room_sessions', 'rooms', 'teams', 'games', 'users'] as $tabel) {
+        $pdo->exec("DROP TABLE IF EXISTS $tabel");
     }
-}
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+} else {
+    $dbPath = __DIR__.'/../storage/database.sqlite';
 
-touch($dbPath);
+    // Ook -wal en -shm weg: in WAL-modus staan de laatste wijzigingen in die
+    // bestanden, en een achtergebleven wal hoort niet bij een nieuwe database.
+    foreach ([$dbPath, $dbPath.'-wal', $dbPath.'-shm'] as $bestand) {
+        if (is_file($bestand)) {
+            unlink($bestand);
+        }
+    }
+
+    touch($dbPath);
+}
 
 // De kamers uit de oude database bestaan niet meer, dus hun afbeeldingen ook niet.
 foreach (glob(__DIR__.'/../storage/app/public/rooms/*') ?: [] as $oudeAfbeelding) {
     unlink($oudeAfbeelding);
 }
-Database::connection()->exec(file_get_contents(__DIR__.'/schema.sql'));
+Database::createSchema();
 
 User::insert([
     'name' => 'Beheerder',

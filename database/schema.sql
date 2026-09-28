@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     image_path TEXT,          -- oude losse afbeelding; staat nu in de inhoud zelf
     exclusive INTEGER NOT NULL DEFAULT 0, -- 1 = er mag maar één team tegelijk in
     active INTEGER NOT NULL DEFAULT 1,
+    allow_image_answer INTEGER NOT NULL DEFAULT 0, -- 1 = team mag een foto als antwoord insturen (moet beoordeeld worden)
     created_at TEXT,
     updated_at TEXT,
     UNIQUE(game_id, name)
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS room_sessions (
     started_at TEXT,
     finished_at TEXT,
     points INTEGER NOT NULL DEFAULT 0,
+    result_seen INTEGER NOT NULL DEFAULT 1, -- 0 = team heeft de uitslag van een door de admin beoordeeld antwoord nog niet gezien
     created_at TEXT,
     updated_at TEXT
 );
@@ -78,10 +80,37 @@ CREATE TABLE IF NOT EXISTS answer_attempts (
     answer TEXT NOT NULL,
     correct INTEGER NOT NULL,
     attempt_number INTEGER NOT NULL,
+    image_path TEXT,                          -- gevuld als dit een foto-antwoord is
+    review_status TEXT NOT NULL DEFAULT 'auto', -- auto | pending | approved | rejected
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TEXT,
+    acknowledged INTEGER NOT NULL DEFAULT 1,   -- 0 = team heeft de afkeuring nog niet gezien
     created_at TEXT,
     updated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_aa_session ON answer_attempts(room_session_id);
+CREATE INDEX IF NOT EXISTS idx_aa_review_status ON answer_attempts(review_status);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    sender TEXT NOT NULL, -- 'team' | 'admin'
+    body TEXT NOT NULL,
+    read_by_admin_at TEXT,
+    read_by_team_at TEXT,
+    created_at TEXT,
+    updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_chat_team ON chat_messages(team_id);
+CREATE INDEX IF NOT EXISTS idx_chat_game ON chat_messages(game_id);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    created_at TEXT,
+    updated_at TEXT
+);
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

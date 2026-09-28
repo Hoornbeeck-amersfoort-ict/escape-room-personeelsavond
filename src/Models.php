@@ -129,13 +129,26 @@ class RoomSession extends Record
 {
     protected static string $table = 'room_sessions';
 
-    public const OCCUPYING = ['assigned', 'active'];
+    public const OCCUPYING = ['assigned', 'active', 'pending_review'];
 
     public const PLAYED = ['completed', 'failed', 'given_up'];
 
     public static function attemptsUsed(int $sessionId): int
     {
         return AnswerAttempt::count(['room_session_id' => $sessionId]);
+    }
+
+    /** De laatst afgeronde sessie van dit team waarvan de beoordelingsuitslag nog niet getoond is. */
+    public static function unseenResultForTeam(int $teamId): ?array
+    {
+        $rows = self::where(['team_id' => $teamId, 'result_seen' => 0], 'id DESC');
+
+        return $rows[0] ?? null;
+    }
+
+    public static function markResultSeen(int $sessionId): void
+    {
+        self::update($sessionId, ['result_seen' => 1]);
     }
 
     public static function activeDurationSeconds(array $session, ?string $now = null): int
@@ -153,7 +166,8 @@ class RoomSession extends Record
     {
         $allowed = match ($from) {
             'assigned' => ['active', 'given_up', 'failed'],
-            'active' => ['completed', 'failed', 'given_up'],
+            'active' => ['completed', 'failed', 'given_up', 'pending_review'],
+            'pending_review' => ['completed', 'active', 'failed'],
             default => [],
         };
 
@@ -165,6 +179,7 @@ class RoomSession extends Record
         return match ($status) {
             'assigned' => 'Onderweg',
             'active' => 'Bezig',
+            'pending_review' => 'Wacht op beoordeling',
             'completed' => 'Opgelost',
             'failed' => 'Verloren',
             'given_up' => 'Opgegeven',
@@ -176,6 +191,148 @@ class RoomSession extends Record
 class AnswerAttempt extends Record
 {
     protected static string $table = 'answer_attempts';
+
+    /** Foto-antwoorden die nog op een oordeel van de organisator wachten, oudste eerst. */
+    public static function pendingReview(int $gameId): array
+    {
+        $sql = 'SELECT answer_attempts.* FROM answer_attempts
+                JOIN room_sessions ON room_sessions.id = answer_attempts.room_session_id
+                WHERE room_sessions.game_id = :game_id AND answer_attempts.review_status = :status
+                ORDER BY answer_attempts.id ASC';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(['game_id' => $gameId, 'status' => 'pending']);
+
+        return $stmt->fetchAll();
+    }
+
+    public static function pendingReviewCount(int $gameId): int
+    {
+        $sql = 'SELECT COUNT(*) AS c FROM answer_attempts
+                JOIN room_sessions ON room_sessions.id = answer_attempts.room_session_id
+                WHERE room_sessions.game_id = :game_id AND answer_attempts.review_status = :status';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(['game_id' => $gameId, 'status' => 'pending']);
+
+        return (int) $stmt->fetch()['c'];
+    }
+}
+
+class ChatMessage extends Record
+{
+    protected static string $table = 'chat_messages';
+
+    public static function forTeam(int $teamId): array
+    {
+        return self::where(['team_id' => $teamId], 'id ASC');
+    }
+
+    public static function unreadByAdminCount(int $gameId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS c FROM chat_messages WHERE game_id = :game_id AND sender = :sender AND read_by_admin_at IS NULL'
+        );
+        $stmt->execute(['game_id' => $gameId, 'sender' => 'team']);
+
+        return (int) $stmt->fetch()['c'];
+    }
+
+    public static function unreadByAdminCountForTeam(int $teamId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS c FROM chat_messages WHERE team_id = :team_id AND sender = :sender AND read_by_admin_at IS NULL'
+        );
+        $stmt->execute(['team_id' => $teamId, 'sender' => 'team']);
+
+        return (int) $stmt->fetch()['c'];
+    }
+
+    public static function unreadByTeamCount(int $teamId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS c FROM chat_messages WHERE team_id = :team_id AND sender = :sender AND read_by_team_at IS NULL'
+        );
+        $stmt->execute(['team_id' => $teamId, 'sender' => 'admin']);
+
+        return (int) $stmt->fetch()['c'];
+    }
+
+    /**
+     * De berichten van de organisatie die dit team nog niet gezien heeft. Die
+     * gaan als melding over het spelscherm, zodat een team een vraag niet mist.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function unreadForTeam(int $teamId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT * FROM chat_messages WHERE team_id = :team_id AND sender = 'admin' AND read_by_team_at IS NULL ORDER BY id ASC"
+        );
+        $stmt->execute(['team_id' => $teamId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public static function markReadByAdmin(int $teamId): void
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE chat_messages SET read_by_admin_at = :now WHERE team_id = :team_id AND sender = 'team' AND read_by_admin_at IS NULL"
+        );
+        $stmt->execute(['now' => Database::now(), 'team_id' => $teamId]);
+    }
+
+    public static function markReadByTeam(int $teamId): void
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE chat_messages SET read_by_team_at = :now WHERE team_id = :team_id AND sender = 'admin' AND read_by_team_at IS NULL"
+        );
+        $stmt->execute(['now' => Database::now(), 'team_id' => $teamId]);
+    }
+}
+
+class Setting extends Record
+{
+    protected static string $table = 'settings';
+
+    public static function get(string $key, ?string $default = null): ?string
+    {
+        // `key` is een gereserveerd woord in MySQL; de backticks werken in beide
+        // databases (SQLite accepteert ze ook).
+        $stmt = Database::connection()->prepare('SELECT value FROM settings WHERE `key` = ?');
+        $stmt->execute([$key]);
+        $row = $stmt->fetch();
+
+        return $row === false ? $default : $row['value'];
+    }
+
+    public static function set(string $key, ?string $value): void
+    {
+        $upsert = Database::isMysql()
+            ? 'ON DUPLICATE KEY UPDATE value = :value2, updated_at = :now2'
+            : 'ON CONFLICT(`key`) DO UPDATE SET value = :value2, updated_at = :now2';
+
+        $stmt = Database::connection()->prepare(
+            'INSERT INTO settings (`key`, value, created_at, updated_at) VALUES (:key, :value, :now, :now3) '.$upsert
+        );
+        $stmt->execute([
+            'key' => $key,
+            'value' => $value,
+            'value2' => $value,
+            'now' => Database::now(),
+            'now2' => Database::now(),
+            'now3' => Database::now(),
+        ]);
+    }
+
+    /** @return array<string, string|null> */
+    public static function many(array $keys): array
+    {
+        $result = [];
+        foreach ($keys as $key) {
+            $result[$key] = self::get($key);
+        }
+
+        return $result;
+    }
 }
 
 class AuditLog extends Record

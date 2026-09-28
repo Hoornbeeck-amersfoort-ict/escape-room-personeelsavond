@@ -15,6 +15,10 @@ use App\View;
 /** @var int|null $resettingSessionId */
 /** @var int|null $adjustingScoreSessionId */
 /** @var array|null $adjustingSession */
+/** @var int $pendingReviewCount */
+/** @var int $unreadChatCount */
+/** @var int $activeTeamsCount */
+/** @var int $roomsFullCount */
 /** @var string $fingerprint */
 
 $gameId = (int) $game['id'];
@@ -39,6 +43,25 @@ function fmtDuration(int $seconds): string
             Nog <?= fmtDuration($remainingEventSeconds) ?>
         </div>
     <?php endif; ?>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-tile">
+        <span class="summary-count"><?= $activeTeamsCount ?></span>
+        <span class="summary-label">actieve teams</span>
+    </div>
+    <a href="/admin/games/<?= $gameId ?>/answers" class="summary-tile <?= $pendingReviewCount > 0 ? 'attention' : '' ?>">
+        <span class="summary-count"><?= $pendingReviewCount ?></span>
+        <span class="summary-label">foto's te beoordelen</span>
+    </a>
+    <a href="/admin/games/<?= $gameId ?>/chat" class="summary-tile <?= $unreadChatCount > 0 ? 'attention' : '' ?>">
+        <span class="summary-count"><?= $unreadChatCount ?></span>
+        <span class="summary-label">ongelezen chatberichten</span>
+    </a>
+    <div class="summary-tile">
+        <span class="summary-count"><?= $roomsFullCount ?></span>
+        <span class="summary-label">volle kamers</span>
+    </div>
 </div>
 
 <div class="tabs">
@@ -107,6 +130,71 @@ function fmtDuration(int $seconds): string
     </table>
 <?php endif; ?>
 
+<div class="grid-2" style="margin-top:2rem;">
+    <div>
+        <h2 style="margin-bottom:.75rem;">Foto's ter beoordeling<?php if ($pendingReviewCount > 0): ?> <span class="pill red"><?= $pendingReviewCount ?></span><?php endif; ?></h2>
+        <?php if ($pendingAnswers === []): ?>
+            <div class="panel" style="color:#475569;">Niets te beoordelen.</div>
+        <?php else: ?>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:.75rem;">
+                <?php foreach ($pendingAnswers as $row): $attempt = $row['attempt']; ?>
+                    <div class="panel" style="margin-bottom:0;">
+                        <p style="font-size:.7rem;color:#475569;text-transform:uppercase;font-weight:700;margin:0 0 .4rem;">
+                            <?= View::e($row['team']['name'] ?? '?') ?> · <?= View::e($row['room']['name'] ?? '?') ?> · poging <?= (int) $attempt['attempt_number'] ?>
+                        </p>
+                        <a href="/storage/answers/<?= View::e($attempt['image_path']) ?>" target="_blank">
+                            <img src="/storage/answers/<?= View::e($attempt['image_path']) ?>" alt="" style="width:100%;border-radius:.5rem;display:block;">
+                        </a>
+                        <div style="display:flex;gap:.5rem;margin-top:.6rem;">
+                            <form method="POST" action="/admin/games/<?= $gameId ?>/answers/<?= (int) $attempt['id'] ?>/approve" style="flex:1;">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="redirect" value="/admin/games/<?= $gameId ?>/dashboard?tab=<?= $tab ?>">
+                                <button type="submit" class="w-full">Goedkeuren</button>
+                            </form>
+                            <form method="POST" action="/admin/games/<?= $gameId ?>/answers/<?= (int) $attempt['id'] ?>/reject" style="flex:1;">
+                                <?= Csrf::field() ?>
+                                <input type="hidden" name="redirect" value="/admin/games/<?= $gameId ?>/dashboard?tab=<?= $tab ?>">
+                                <button type="submit" class="w-full danger">Afkeuren</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div>
+        <h2 style="margin-bottom:.75rem;">Chat<?php if ($unreadChatCount > 0): ?> <span class="pill red"><?= $unreadChatCount ?></span><?php endif; ?></h2>
+        <?php if ($chatRows === []): ?>
+            <div class="panel" style="color:#475569;">Nog geen gesprekken.</div>
+        <?php else: ?>
+            <?php $lastChatIndex = array_key_last($chatRows); ?>
+            <div class="panel" style="padding:0;max-height:26rem;overflow-y:auto;">
+                <?php foreach ($chatRows as $i => $row): $team = $row['team']; $last = $row['last']; ?>
+                    <div style="padding:.75rem 1rem;<?= $i === $lastChatIndex ? '' : 'border-bottom:1px solid #e2e8f0;' ?>">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <strong><?= View::e($team['name']) ?></strong>
+                            <span>
+                                <?php if ($row['unread'] > 0): ?><span class="pill red"><?= $row['unread'] ?></span><?php endif; ?>
+                                <a href="/admin/games/<?= $gameId ?>/chat/<?= (int) $team['id'] ?>" style="font-size:.8rem;">Open</a>
+                            </span>
+                        </div>
+                        <p style="font-size:.85rem;color:#475569;margin:.2rem 0 .5rem;">
+                            <?= $last['sender'] === 'admin' ? 'Jij: ' : '' ?><?= View::e(mb_strimwidth($last['body'], 0, 80, '…')) ?>
+                        </p>
+                        <form method="POST" action="/admin/games/<?= $gameId ?>/chat/<?= (int) $team['id'] ?>/send" style="display:flex;gap:.4rem;">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="redirect" value="/admin/games/<?= $gameId ?>/dashboard?tab=<?= $tab ?>">
+                            <input type="text" name="body" placeholder="Snel antwoorden…" autocomplete="off" required style="margin:0;flex:1;font-size:.85rem;padding:.4rem .6rem;">
+                            <button type="submit" style="padding:.4rem .8rem;font-size:.85rem;">&rarr;</button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <?php if ($manualAssignTeamId): ?>
     <div class="overlay">
     <div class="panel" style="max-width:28rem;">
@@ -160,12 +248,14 @@ function fmtDuration(int $seconds): string
 
 <script>
     // Ververst alleen als er echt iets veranderde (team loste een kamer op,
-    // kreeg een nieuwe kamer, werd geblokkeerd). Staat er een venster open,
-    // dan wachten we: anders verdwijnt de score die je net intypte.
+    // kreeg een nieuwe kamer, werd geblokkeerd). Staat er een venster open of
+    // typt de beheerder net een chatbericht, dan wachten we: anders verdwijnt
+    // wat er net ingetypt werd.
     (() => {
         const bekend = <?= json_encode($fingerprint) ?>;
         setInterval(async () => {
             if (document.querySelector('.overlay')) return;
+            if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
             try {
                 const antwoord = await fetch('<?= "/admin/games/$gameId/dashboard/status" ?>', { headers: { Accept: 'application/json' } });
                 if (! antwoord.ok) return;
