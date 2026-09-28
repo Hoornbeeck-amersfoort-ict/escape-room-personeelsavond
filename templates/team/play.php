@@ -16,6 +16,7 @@ use App\View;
 /** @var string|null $supportNote */
 /** @var bool $chatEnabled */
 /** @var array $chatMessages */
+/** @var array $unreadChatMessages */
 /** @var string|null $pendingImagePath */
 
 function fmtDur(int $s): string
@@ -209,7 +210,26 @@ function fmtDur(int $s): string
     </main>
 
     <?php if ($supportPhone || $chatEnabled): ?>
-        <button type="button" id="help-toggle" class="help-toggle" aria-label="Hulp">💬</button>
+        <?php $unread = $chatEnabled ? $unreadChatMessages : []; ?>
+        <button type="button" id="help-toggle" class="help-toggle" aria-label="Hulp">
+            <span class="help-toggle-icon">💬</span>
+            <span id="chat-badge" class="chat-badge" <?= $unread === [] ? 'hidden' : '' ?>><?= count($unread) ?></span>
+        </button>
+
+        <?php if ($unread !== []): ?>
+            <!-- Melding met de inhoud van het bericht, zodat een team een vraag
+                 van de organisatie niet mist als de chat dicht staat. -->
+            <div id="chat-toast" class="chat-toast" role="status" aria-live="polite">
+                <div class="chat-toast-head">
+                    <strong>Nieuw bericht van de organisatie</strong>
+                    <button type="button" id="chat-toast-close" aria-label="Melding sluiten">✕</button>
+                </div>
+                <?php foreach ($unread as $m): ?>
+                    <p class="chat-toast-body"><?= nl2br(View::e($m['body'])) ?></p>
+                <?php endforeach; ?>
+                <button type="button" id="chat-toast-open" class="chat-toast-open">Open de chat</button>
+            </div>
+        <?php endif; ?>
         <div id="help-panel" class="help-panel" hidden>
             <div class="help-panel-head">
                 <strong>Hulp nodig?</strong>
@@ -243,9 +263,43 @@ function fmtDur(int $s): string
                 const panel = document.getElementById('help-panel');
                 const close = document.getElementById('help-close');
                 const log = document.getElementById('chat-log');
-                const open = () => { panel.hidden = false; if (log) log.scrollTop = log.scrollHeight; };
+                const badge = document.getElementById('chat-badge');
+                const toast = document.getElementById('chat-toast');
+                const token = <?= json_encode(Csrf::token()) ?>;
+
+                // Pas als het team de melding echt gezien heeft (weggeklikt of de
+                // chat geopend) melden we dat aan de server; anders zou een
+                // bericht verdwijnen zonder dat iemand het gelezen heeft.
+                let gemeld = false;
+                const markeerGelezen = () => {
+                    if (gemeld || !badge || badge.hidden) return;
+                    gemeld = true;
+                    badge.hidden = true;
+                    const body = new URLSearchParams({ _token: token });
+                    fetch('/play/chat/read', { method: 'POST', body }).catch(() => {
+                        // Netwerk even weg: de melding komt bij de volgende
+                        // verversing gewoon terug.
+                        gemeld = false;
+                    });
+                };
+
+                const open = () => {
+                    panel.hidden = false;
+                    if (log) log.scrollTop = log.scrollHeight;
+                    if (toast) toast.hidden = true;
+                    markeerGelezen();
+                };
+
                 toggle.addEventListener('click', open);
                 close.addEventListener('click', () => { panel.hidden = true; });
+
+                if (toast) {
+                    document.getElementById('chat-toast-open').addEventListener('click', open);
+                    document.getElementById('chat-toast-close').addEventListener('click', () => {
+                        toast.hidden = true;
+                        markeerGelezen();
+                    });
+                }
             })();
         </script>
     <?php endif; ?>

@@ -256,6 +256,22 @@ class ChatMessage extends Record
         return (int) $stmt->fetch()['c'];
     }
 
+    /**
+     * De berichten van de organisatie die dit team nog niet gezien heeft. Die
+     * gaan als melding over het spelscherm, zodat een team een vraag niet mist.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function unreadForTeam(int $teamId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT * FROM chat_messages WHERE team_id = :team_id AND sender = 'admin' AND read_by_team_at IS NULL ORDER BY id ASC"
+        );
+        $stmt->execute(['team_id' => $teamId]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function markReadByAdmin(int $teamId): void
     {
         $stmt = Database::connection()->prepare(
@@ -279,7 +295,9 @@ class Setting extends Record
 
     public static function get(string $key, ?string $default = null): ?string
     {
-        $stmt = Database::connection()->prepare('SELECT value FROM settings WHERE key = ?');
+        // `key` is een gereserveerd woord in MySQL; de backticks werken in beide
+        // databases (SQLite accepteert ze ook).
+        $stmt = Database::connection()->prepare('SELECT value FROM settings WHERE `key` = ?');
         $stmt->execute([$key]);
         $row = $stmt->fetch();
 
@@ -288,11 +306,21 @@ class Setting extends Record
 
     public static function set(string $key, ?string $value): void
     {
+        $upsert = Database::isMysql()
+            ? 'ON DUPLICATE KEY UPDATE value = :value2, updated_at = :now2'
+            : 'ON CONFLICT(`key`) DO UPDATE SET value = :value2, updated_at = :now2';
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO settings (key, value, created_at, updated_at) VALUES (:key, :value, :now, :now)
-             ON CONFLICT(key) DO UPDATE SET value = :value, updated_at = :now'
+            'INSERT INTO settings (`key`, value, created_at, updated_at) VALUES (:key, :value, :now, :now3) '.$upsert
         );
-        $stmt->execute(['key' => $key, 'value' => $value, 'now' => Database::now()]);
+        $stmt->execute([
+            'key' => $key,
+            'value' => $value,
+            'value2' => $value,
+            'now' => Database::now(),
+            'now2' => Database::now(),
+            'now3' => Database::now(),
+        ]);
     }
 
     /** @return array<string, string|null> */

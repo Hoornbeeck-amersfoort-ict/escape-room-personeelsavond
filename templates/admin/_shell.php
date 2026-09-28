@@ -31,6 +31,9 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <?php endif; ?>
             <a href="/admin/settings" class="<?= $currentPath === '/admin/settings' ? 'active' : '' ?>">Instellingen</a>
             <a href="/admin/audit-logs" class="<?= $currentPath === '/admin/audit-logs' ? 'active' : '' ?>">Audit log</a>
+            <?php if (\App\Env::get('PHPMYADMIN_URL')): ?>
+                <a href="/phpmyadmin/" class="<?= str_starts_with($currentPath, '/phpmyadmin') ? 'active' : '' ?>">phpMyAdmin</a>
+            <?php endif; ?>
         </nav>
         <form method="POST" action="/admin/logout">
             <?= \App\Csrf::field() ?>

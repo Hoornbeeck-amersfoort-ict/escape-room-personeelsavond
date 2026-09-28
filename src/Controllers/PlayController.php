@@ -40,8 +40,12 @@ class PlayController
             'supportNote' => Setting::get('support_note'),
             'chatEnabled' => Setting::get('chat_enabled', '1') === '1',
             'chatMessages' => ChatMessage::forTeam((int) $team['id']),
+            // Nog niet gelezen berichten van de organisatie: die worden als
+            // melding getoond en pas afgevinkt als het team ze echt gezien
+            // heeft (popup weggeklikt of chat geopend), niet al bij het
+            // tekenen van de pagina.
+            'unreadChatMessages' => ChatMessage::unreadForTeam((int) $team['id']),
         ];
-        ChatMessage::markReadByTeam((int) $team['id']);
 
         $unseenResult = $feedback === null ? RoomSession::unseenResultForTeam((int) $team['id']) : null;
 
@@ -274,6 +278,20 @@ class PlayController
         }
 
         header('Location: /play');
+    }
+
+    /**
+     * Het team heeft de meldingen gezien (popup weggeklikt of de chat
+     * geopend). Wordt via fetch aangeroepen, dus alleen een korte JSON terug.
+     */
+    public function markChatRead(): void
+    {
+        $this->guardPost();
+        $team = Auth::team();
+        ChatMessage::markReadByTeam((int) $team['id']);
+
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true]);
     }
 
     public static function answersDirectory(): string

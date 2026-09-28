@@ -213,6 +213,36 @@ table.dark tbody tr { border-top: 1px solid #334155; }
     width: 3.25rem; height: 3.25rem; border-radius: 999px;
     background: #d97706; color: #0f172a; border: none; font-size: 1.4rem;
     box-shadow: 0 6px 20px rgba(0,0,0,.4); cursor: pointer;
+    /* De spraakwolk stond links-boven in de knop; flex zet hem precies midden. */
+    display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1;
+}
+.help-toggle-icon { display: block; line-height: 1; }
+
+/* Rood bolletje op de chatknop: er staat een ongelezen bericht klaar. */
+.chat-badge {
+    position: absolute; top: -.15rem; right: -.15rem;
+    min-width: 1.1rem; height: 1.1rem; padding: 0 .2rem;
+    border-radius: 999px; background: #ef4444; color: white;
+    font-size: .7rem; font-weight: 700; line-height: 1.1rem;
+    box-shadow: 0 0 0 2px #0f172a;
+}
+.chat-badge[hidden] { display: none; }
+
+/* Melding met de inhoud van een nieuw bericht, gecentreerd boven de chatknop. */
+.chat-toast {
+    position: fixed; bottom: 5.25rem; left: 50%; transform: translateX(-50%); z-index: 45;
+    width: min(22rem, calc(100vw - 2rem));
+    background: #1e293b; border: 1px solid #d97706; border-radius: 1rem; padding: .9rem 1rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); text-align: center;
+}
+.chat-toast[hidden] { display: none; }
+.chat-toast-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.chat-toast-head strong { font-size: .85rem; color: #fbbf24; }
+.chat-toast-head button { background: none; border: none; color: #cbd5e1; font-size: .9rem; cursor: pointer; padding: 0; }
+.chat-toast-body { margin: 0 0 .5rem; font-size: .9rem; color: #e2e8f0; text-align: left; }
+.chat-toast-open {
+    width: 100%; background: #d97706; color: #0f172a; border: none;
+    border-radius: .6rem; padding: .45rem; font-weight: 600; cursor: pointer;
 }
 .help-panel {
     position: fixed; bottom: 5rem; right: 1.25rem; z-index: 40;

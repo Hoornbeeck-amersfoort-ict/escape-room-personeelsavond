@@ -25,15 +25,22 @@ use App\Controllers\PlayController;
 use App\Controllers\TeamAuthController;
 use App\Database;
 use App\Router;
+use App\Services\PhpMyAdminProxy;
 use App\View;
 
 session_start();
 
-// Bootstrap the SQLite file from schema.sql if this is a fresh checkout.
-$dbPath = __DIR__.'/../storage/database.sqlite';
-if (! is_file($dbPath)) {
-    touch($dbPath);
-    Database::connection()->exec(file_get_contents(__DIR__.'/../database/schema.sql'));
+// Bootstrap een lege database uit het schema als dit een verse installatie is.
+// Bij SQLite moet het bestand er eerst zijn; bij MySQL bestaat de database al
+// (door phpMyAdmin of de hoster aangemaakt) en maken we alleen de tabellen.
+if (! Database::isMysql()) {
+    $dbPath = __DIR__.'/../storage/database.sqlite';
+    if (! is_file($dbPath)) {
+        touch($dbPath);
+    }
+}
+if (! Database::hasTables()) {
+    Database::createSchema();
 }
 
 function requireTeam(): void
@@ -50,6 +57,17 @@ function requireAdmin(): void
         header('Location: /admin/login');
         exit;
     }
+}
+
+// phpMyAdmin hangt onder de eigen URL van de app: alles onder /phpmyadmin gaat
+// naar de bestaande phpMyAdmin-server (zie PHPMYADMIN_URL in .env). Dit staat
+// vóór de router, omdat phpMyAdmin paden van willekeurige diepte en alle
+// methodes gebruikt; alleen een ingelogde beheerder komt erlangs.
+$requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+if (PhpMyAdminProxy::handles($requestPath)) {
+    requireAdmin();
+    (new PhpMyAdminProxy)->handle($_SERVER['REQUEST_URI']);
+    exit;
 }
 
 $router = new Router;
@@ -93,6 +111,10 @@ $router->post('/play/answer-image', function () {
 $router->post('/play/chat', function () {
     requireTeam();
     (new PlayController)->sendChatMessage();
+});
+$router->post('/play/chat/read', function () {
+    requireTeam();
+    (new PlayController)->markChatRead();
 });
 
 // Admin auth.

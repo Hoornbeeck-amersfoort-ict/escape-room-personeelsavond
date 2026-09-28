@@ -32,6 +32,12 @@ $nieuweKolommen = [
     ],
 ];
 
+// Dit script praat SQLite (PRAGMA table_info, TEXT-kolommen) en is er voor
+// bestaande SQLite-installaties. Op MySQL is schema.mysql.sql al compleet.
+if (Database::isMysql()) {
+    exit("Deze database draait op MySQL; het volledige schema staat in database/schema.mysql.sql.\nGebruik database/sqlite-to-mysql.php om bestaande SQLite-data over te zetten.\n");
+}
+
 $pdo = Database::connection();
 $toegevoegd = 0;
 
